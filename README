@@ -1,8 +1,6 @@
 This repository is used by EDK II as a staging location for new
 features that are not yet ready for inclusion in EDK II.
 
-The edk2-staging process is being discussed on edk2-devel.
-
 Introduction
 =================
 Need place on tianocore.org where new features that are not ready for product 
