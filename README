@@ -27,7 +27,7 @@ Process for creating, using, and maintaining staging efforts
 
 	[staging/branch]: Subject
 
-3) All commits to edk2-staging must follow same edk2 rules (e.g. Tiano Contributor's Agreement)
+3) All commits to edk2-staging must follow same edk2 rules
 
 4) Process to add a new feature to edk2-staging
 	a) Maintainer sends patch email to edk2-devel mailing list announcing the creation of a new 
