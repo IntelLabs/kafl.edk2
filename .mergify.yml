@@ -1,6 +1,17 @@
 ## @file
 # Mergify YML file that automatically merges a GitHub pull request against
-# edk2-ci if all of the GitHub branch protections have passed.
+# edk2-ci if all of the GitHub branch protections have passed.  It also
+# contains rules to auto close branches that have merge conflicts or pull
+# requests that are not from an EDK II Maintainer.
+#
+# * Update the 'base=edk2-ci' statements with the name of the branch to merge
+#   pull requests.
+#
+# * Update the 'status-failure' statement with the name of the name of the Azure
+#   Pipelines Build that performs the EDK II Maintainer check.
+#
+# * This file must be checked into the 'default' branch of a repo.  Copies
+#   of this file on other branches of a repo are ignored by Mergify.
 #
 # Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
