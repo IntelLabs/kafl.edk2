@@ -1,0 +1,34 @@
+## @file
+# Mergify YML file that automatically merges a GitHub pull request against
+# edk2-ci if all of the GitHub branch protections have passed.
+#
+# Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# https://github.com/apps/mergify
+# https://doc.mergify.io/
+#
+##
+
+pull_request_rules:
+  - name: automatic merge when GitHub branch protection passes
+    conditions:
+      - base=edk2-ci
+    actions:
+      merge:
+        strict: true
+        method: rebase
+  - name: auotmatically close a PR that can not be merged due to a merge conflict
+    conditions:
+      - base=edk2-ci
+      - conflict
+    actions:
+      close:
+        message: PR can not be merged due to conflict.  Please rebase and resubmit
+  - name: automatically close a PR that fails the EDK II Maintainers membership check
+    conditions:
+      - base=edk2-ci
+      - status-failure=tianocore.edk2-staging
+    actions:
+      close:
+        message: PR submitter is not a member of the Tianocore EDK II Maintainers team
