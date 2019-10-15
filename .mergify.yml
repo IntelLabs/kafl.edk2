@@ -34,7 +34,7 @@ pull_request_rules:
       - base=edk2-ci
       - conflict
     actions:
-      close:
+      comment:
         message: PR can not be merged due to conflict.  Please rebase and resubmit
   - name: automatically close a PR that fails the EDK II Maintainers membership check
     conditions:
