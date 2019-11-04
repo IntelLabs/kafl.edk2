@@ -31,9 +31,9 @@ pull_request_rules:
       - base=edk2-ci
       - label=push
       - author=@tianocore/edk-ii-maintainers
-      - status-success~=^tianocore\.PatchCheck$
-      - status-success~=^Ubuntu GCC5 PR$
-      - status-success~=^Windows VS2019 PR$
+      - status-success=tianocore.PatchCheck
+      - status-success=Ubuntu GCC5 PR (FINISHED)
+      - status-success=Windows VS2019 PR (FINISHED)
     actions:
       merge:
         strict: true
@@ -43,11 +43,9 @@ pull_request_rules:
     conditions:
       - base=edk2-ci
       - -label=push
-      - status-success~=^tianocore\.PatchCheck$
-      - status-success~=^Ubuntu GCC5 PR$
-      - status-success~=^Windows VS2019 PR$
-      - "#status-success>=20"
-      - -closed
+      - status-success=tianocore.PatchCheck
+      - status-success=Ubuntu GCC5 PR (FINISHED)
+      - status-success=Windows VS2019 PR (FINISHED)
     actions:
       close:
         message: All checks passed. Auto close personal build.
@@ -72,7 +70,7 @@ pull_request_rules:
   - name: Post a comment on a PR if PatchCheck fails
     conditions:
       - base=edk2-ci
-      - status-failure~=^tianocore\.PatchCheck$
+      - status-failure=tianocore.PatchCheck
     actions:
       comment:
         message: PR can not be merged due to a PatchCheck failure.  Please resolve and resubmit
@@ -80,7 +78,7 @@ pull_request_rules:
   - name: Post a comment on a PR if Ubuntu GCC5 fails
     conditions:
       - base=edk2-ci
-      - status-failure~=^Ubuntu GCC5 PR$
+      - status-failure=Ubuntu GCC5 PR
     actions:
       comment:
         message: PR can not be merged due to an Ubuntu GCC5 failure.  Please resolve and resubmit
@@ -88,7 +86,7 @@ pull_request_rules:
   - name: Post a comment on a PR if Windows VS2019 fails
     conditions:
       - base=edk2-ci
-      - status-failure~=^Windows VS2019 PR$
+      - status-failure=Windows VS2019 PR
     actions:
       comment:
         message: PR can not be merged due to a Windows VS2019 failure.  Please resolve and resubmit
