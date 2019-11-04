@@ -46,6 +46,7 @@ pull_request_rules:
       - status-success~=^tianocore\.PatchCheck$
       - status-success~=^Ubuntu GCC5 PR$
       - status-success~=^Windows VS2019 PR$
+      - "#status-success>=20"
       - -closed
     actions:
       close:
