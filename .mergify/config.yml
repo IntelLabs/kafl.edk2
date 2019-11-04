@@ -32,8 +32,8 @@ pull_request_rules:
       - label=push
       - author=@tianocore/edk-ii-maintainers
       - status-success=tianocore.PatchCheck
-      - status-success=Ubuntu GCC5 PR (FINISHED)
-      - status-success=Windows VS2019 PR (FINISHED)
+      - status-success=Ubuntu GCC5 PR
+      - status-success=Windows VS2019 PR
     actions:
       merge:
         strict: true
@@ -44,8 +44,8 @@ pull_request_rules:
       - base=edk2-ci
       - -label=push
       - status-success=tianocore.PatchCheck
-      - status-success=Ubuntu GCC5 PR (FINISHED)
-      - status-success=Windows VS2019 PR (FINISHED)
+      - status-success=Ubuntu GCC5 PR
+      - status-success=Windows VS2019 PR
     actions:
       close:
         message: All checks passed. Auto close personal build.
