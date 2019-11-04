@@ -48,7 +48,7 @@ pull_request_rules:
       - status-success~=^Windows VS2019 PR$
     actions:
       close:
-        message: All checks passed.  Auto close personal build.
+        message: ""
 
   - name: Post a comment on a PR that can not be merged due to a merge conflict
     conditions:
