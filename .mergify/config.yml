@@ -43,9 +43,10 @@ pull_request_rules:
     conditions:
       - base=edk2-ci
       - -label=push
+      - -closed
       - status-success=tianocore.PatchCheck
-      - status-success=Ubuntu GCC5 PR
-      - status-success=Windows VS2019 PR
+      - status-success=Ubuntu GCC5 PR (FINISHED)
+      - status-success=Windows VS2019 PR (FINISHED)
     actions:
       close:
         message: All checks passed. Auto close personal build.
