@@ -82,7 +82,7 @@ pull_request_rules:
     conditions:
       - base=edk2-ci
       - status-failure=Ubuntu GCC5 PR
-      - status-failure=Ubuntu GCC5 PR (FINISHED)
+      - status-success=Ubuntu GCC5 PR (FAILED)
     actions:
       comment:
         message: PR can not be merged due to an Ubuntu GCC5 failure.  Please resolve and resubmit
@@ -91,7 +91,7 @@ pull_request_rules:
     conditions:
       - base=edk2-ci
       - status-failure=Windows VS2019 PR
-      - status-failure=Windows VS2019 PR (FINISHED)
+      - status-success=Windows VS2019 PR (FAILED)
     actions:
       comment:
         message: PR can not be merged due to a Windows VS2019 failure.  Please resolve and resubmit
