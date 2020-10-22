@@ -1,0 +1,72 @@
+## @file
+#  ACPI Platform Driver
+#
+#  Copyright (c) 2008 - 2020, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = AcpiPlatform
+  FILE_GUID                      = 2A7035A9-2C35-4291-9DE8-478B75019EF8
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = QemuAcpiPlatformEntryPoint
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = X64
+#
+
+[Sources]
+  AcpiPlatform.c
+  AcpiPlatform.h
+  FvAcpiTables.c
+  QemuFwCfgAcpi.c
+  QemuLoader.h
+  PciDecoding.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  TdvfPkg/TdvfPkg.dec
+  UefiCpuPkg/UefiCpuPkg.dec
+  OvmfPkg/OvmfPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  PcdLib
+  BaseMemoryLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  HobLib
+  MemoryAllocationLib
+  BaseLib
+  DxeServicesTableLib
+  OrderedCollectionLib
+  QemuFwCfgLib
+
+[Protocols]
+  gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
+  gEfiFirmwareVolume2ProtocolGuid               # PROTOCOL SOMETIMES_CONSUMED
+  gEfiPciIoProtocolGuid                         # PROTOCOL SOMETIMES_CONSUMED
+  gEfiMpServiceProtocolGuid                     ## SOMETIMES_CONSUMES
+
+[Guids]
+  gRootBridgesConnectedEventGroupGuid
+  gUefiTdvfPkgPlatformGuid
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiTableStorageFile
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuLocalApicBaseAddress
+  gUefiTdvfPkgTokenSpaceGuid.Pcd8259LegacyModeEdgeLevel
+  gUefiTdvfPkgTokenSpaceGuid.PcdFdBaseAddress
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber
+  gUefiTdvfPkgTokenSpaceGuid.PcdTdRelocatedMailboxBase
+
+[Depex]
+  gEfiAcpiTableProtocolGuid

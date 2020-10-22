@@ -1,0 +1,10 @@
+#langdef   en-US "English"
+
+
+#string STR_HTTP_ERR_STATUSCODE    #language en-US "\r'%H%s%N' reports '%s' for '%H%s%N' \r\n"
+#string STR_HTTP_ERR_DOWNLOAD      #language en-US "Unable to download the file '%H%s%N' on '%H%s%N' - %r\r\n"
+#string STR_HTTP_DOWNLOADING       #language en-US "Downloading '%H%s%N'\r\n"
+#string STR_GEN_OUT_MEM           #language en-US "%H%s%N: Memory allocation was not successful.\r\n"
+#string STR_GEN_PARAM_INV         #language en-US "%H%s%N: Invalid argument - '%H%s%N'\r\n"
+
+

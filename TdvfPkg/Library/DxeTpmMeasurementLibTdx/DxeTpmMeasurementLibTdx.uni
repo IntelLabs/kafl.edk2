@@ -1,0 +1,16 @@
+// /** @file
+// Provides Tdx measurement functions for Tdx 1.0
+//
+// This library provides TpmMeasureAndLogData() to to measure and log data, and
+// extend the measurement result into a specific Tdx RTMR register.
+//
+// Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+//
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+// **/
+
+
+#string STR_MODULE_ABSTRACT             #language en-US "Provides Tdx measurement functions"
+
+#string STR_MODULE_DESCRIPTION          #language en-US "This library provides TpmMeasureAndLogData() to to measure and log data, and extend the measurement result into a specific Tdx RTMR."

@@ -1,0 +1,235 @@
+## @file
+#  TDVF: FDF
+#
+#  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+#  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+################################################################################
+
+[Defines]
+!include TdvfPkgDefines.fdf.inc
+
+#
+# Build the variable store and the firmware code as one unified flash device
+# image.
+#
+[FD.TDVF]
+BaseAddress   = $(FW_BASE_ADDRESS)
+Size          = $(FW_SIZE)
+ErasePolarity = 0
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(FW_BLOCKS)
+
+!include VarStore.fdf.inc
+
+$(COMBINED_TDMAILBOX_OFFSET)|$(TDMAILBOX_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTdMailboxBase|gUefiTdvfPkgTokenSpaceGuid.PcdTdMailboxSize
+DATA = {
+  0x00,0x00,0x00,0x00,
+  0xff,0xff,0xff,0xff,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00
+}
+
+$(COMBINED_TDHOB_OFFSET)|$(TDHOB_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTdHobBase|gUefiTdvfPkgTokenSpaceGuid.PcdTdHobSize
+
+$(COMBINED_TEMPSTACK_OFFSET)|$(TEMPSTACK_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTempStackBase|gUefiTdvfPkgTokenSpaceGuid.PcdTempStackSize
+
+$(COMBINED_TEMPHEAP_OFFSET)|$(TEMPHEAP_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTempRamBase|gUefiTdvfPkgTokenSpaceGuid.PcdTempRamSize
+
+$(COMBINED_MAINFV_OFFSET)|$(MAINFV_SIZE)
+FV = MAIN
+
+
+
+#
+# Build the variable store and the firmware code as separate flash device
+# images.
+#
+[FD.TDVF_VARS]
+BaseAddress   = $(FW_BASE_ADDRESS) 
+Size          = $(VARS_SIZE) 
+ErasePolarity = 1
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(VARS_BLOCKS)
+    
+!include VarStore.fdf.inc
+
+    
+[FD.TDVF_MAIN]
+BaseAddress   = $(MAIN_BASE_ADDRESS)
+Size          = $(MAIN_SIZE)
+ErasePolarity = 1
+BlockSize     = $(BLOCK_SIZE)
+NumBlocks     = $(MAIN_BLOCKS)
+
+
+$(MAIN_TDMAILBOX_OFFSET)|$(TDMAILBOX_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTdMailboxBase|gUefiTdvfPkgTokenSpaceGuid.PcdTdMailboxSize
+DATA = {
+  0x00,0x00,0x00,0x00,
+  0xff,0xff,0xff,0xff,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00
+}
+
+$(MAIN_TDHOB_OFFSET)|$(TDHOB_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTdHobBase|gUefiTdvfPkgTokenSpaceGuid.PcdTdHobSize
+
+$(MAIN_TEMPSTACK_OFFSET)|$(TEMPSTACK_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTempStackBase|gUefiTdvfPkgTokenSpaceGuid.PcdTempStackSize
+
+$(MAIN_TEMPHEAP_OFFSET)|$(TEMPHEAP_SIZE)
+gUefiTdvfPkgTokenSpaceGuid.PcdTempRamBase|gUefiTdvfPkgTokenSpaceGuid.PcdTempRamSize
+
+$(MAINFV_OFFSET)|$(MAINFV_SIZE)
+FV = MAIN
+
+################################################################################
+
+!include TdvfQemuFvMain.fdf.inc
+
+[FV.MAIN]
+BlockSize          = 0x1000
+FvAlignment        = 16
+ERASE_POLARITY     = 1
+MEMORY_MAPPED      = TRUE
+STICKY_WRITE       = TRUE
+LOCK_CAP           = TRUE
+LOCK_STATUS        = TRUE
+WRITE_DISABLED_CAP = TRUE
+WRITE_ENABLED_CAP  = TRUE
+WRITE_STATUS       = TRUE
+WRITE_LOCK_CAP     = TRUE
+WRITE_LOCK_STATUS  = TRUE
+READ_DISABLED_CAP  = TRUE
+READ_ENABLED_CAP   = TRUE
+READ_STATUS        = TRUE
+READ_LOCK_CAP      = TRUE
+READ_LOCK_STATUS   = TRUE
+
+#
+# SEC Phase modules
+#
+# The code in this FV handles the initial firmware startup, and
+# decompresses the PEI and DXE FVs which handles the rest of the boot sequence.
+#
+INF  TdvfPkg/Sec/SecMain.inf
+
+INF  RuleOverride=RESET_VECTOR TdvfPkg/ResetVector/ResetVector.inf
+
+  FILE FV_IMAGE = 9E21FD93-9C72-4c15-8C4B-E77F1DB2D792 {
+    SECTION COMPRESS {
+     #
+     # These firmware volumes will have files placed in them uncompressed,
+     # and then both firmware volumes will be compressed in a single
+     # compression operation in order to achieve better overall compression.
+     #
+     SECTION FV_IMAGE = DXEFV
+   }
+ }
+
+################################################################################
+
+[Rule.Common.SEC]
+  FILE SEC = $(NAMED_GUID) {
+    PE32     PE32           $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING ="$(MODULE_NAME)" Optional
+    VERSION  STRING ="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.PEI_CORE]
+  FILE SEC = $(NAMED_GUID) {
+    PE32     PE32   Align=Auto    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING ="$(MODULE_NAME)" Optional
+    VERSION  STRING ="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.PEIM]
+  FILE PEIM = $(NAMED_GUID) {
+     PEI_DEPEX PEI_DEPEX Optional        $(INF_OUTPUT)/$(MODULE_NAME).depex
+     PE32      PE32   Align=Auto         $(INF_OUTPUT)/$(MODULE_NAME).efi
+     UI       STRING="$(MODULE_NAME)" Optional
+     VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.DXE_CORE]
+  FILE DXE_CORE = $(NAMED_GUID) {
+    PE32     PE32   $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.DXE_DRIVER]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX    DXE_DEPEX Optional      $(INF_OUTPUT)/$(MODULE_NAME).depex
+    PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+    RAW ACPI  Optional               |.acpi
+    RAW ASL   Optional               |.aml
+  }
+
+[Rule.Common.DXE_RUNTIME_DRIVER]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX    DXE_DEPEX Optional      $(INF_OUTPUT)/$(MODULE_NAME).depex
+    PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.UEFI_DRIVER]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX    DXE_DEPEX Optional      $(INF_OUTPUT)/$(MODULE_NAME).depex
+    PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.UEFI_DRIVER.BINARY]
+  FILE DRIVER = $(NAMED_GUID) {
+    DXE_DEPEX DXE_DEPEX Optional      |.depex
+    PE32      PE32                    |.efi
+    UI        STRING="$(MODULE_NAME)" Optional
+    VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.UEFI_APPLICATION]
+  FILE APPLICATION = $(NAMED_GUID) {
+    PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.UEFI_APPLICATION.BINARY]
+  FILE APPLICATION = $(NAMED_GUID) {
+    PE32      PE32                    |.efi
+    UI        STRING="$(MODULE_NAME)" Optional
+    VERSION   STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
+
+[Rule.Common.USER_DEFINED.ACPITABLE]
+  FILE FREEFORM = $(NAMED_GUID) {
+    RAW ACPI               |.acpi
+    RAW ASL                |.aml
+  }
+
+[Rule.Common.SEC.RESET_VECTOR]
+  FILE RAW = $(NAMED_GUID) {
+    RAW BIN   Align = 16   |.bin
+  }
