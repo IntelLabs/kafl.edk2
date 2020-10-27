@@ -30,27 +30,9 @@ Following the edk2 build process, you will find the TDVF binaries under the $WOR
 * TDVF.sb.fd
   - This is the TDVF image with Secure Boot variables enrolled and Secure Boot enabled.
 
-## RUNNING TDVF on QEMU
+For convenience, a build script is included in this package to simplify the build process and supply some specific functions.
 
-* QEMU commands
-`$ /path/to/install_qemu/qemu-system-x86_64 \`  
-`  -no-reboot -name debug-threads=on -enable-kvm -smp 4,sockets=2 -object tdx-guest,id=tdx,debug \`  
-`  -machine q35,accel=kvm,kvm-type=tdx,kernel_irqchip=split,guest-memory-protection=tdx -no-hpet \`  
-`  -cpu host,host-phys-bits,+invtsc \`  
-`  -device loader,file=/path/to/tdvf,id=fd0 \`  
-`  -m 2G -nographic -vga none`
-
-Running a TD requires not only a TDVF but also an updated QEMU/KVM/LinuxGuest. More information visit:  https://github.com/intel/tdx. For example:
-  - The early code of Linux Guest support is at https://github.com/intel/tdx/tree/guest.
-  - The early code of KVM support is at https://github.com/intel/tdx/tree/kvm.
-  - The early code of QEMU support is at TBD.
-
-## Build Scripts
-
-On systems with the bash shell(Linux) or command window (Windows)
-you can use TdvfPkg/build.py to simplify building TDVF.
-
-So, for example, to build TDVF (in Linux):  
+For example, to build TDVF (in Linux):  
   `$ export WORKSPACE=/path/to/edk2`  
   `$ python build.py`  
   
@@ -65,9 +47,9 @@ Usage:
 `           [-key_enroll]`  
 
 Note:
-  - If -key_enroll is set in build.py, Secure Boot variables will be enrolled with the data files defined in DefaultSecureBootConfig in build.py. By default -key_enroll is not defined.
+  - If -key_enroll is set, Secure Boot variables will be enrolled with the data files defined in DefaultSecureBootConfig in build.py. By default -key_enroll is not set.
   - More information about Secure Boot is in following section.
-
+  
 ## Secure Boot
 
 TDVF uses UEFI Secure Boot as base with extensions for TD launch.
@@ -83,6 +65,22 @@ Follow below steps to enroll the Secure Boot variables in build scripts.
     - SecureBootEnable: binary file with 1 byte (0 for disable and 1 for enable)
   * Update the DefaultSecureBootConfig in build.py with above information.
   * Run build.py with [-key_enroll]
+
+## RUNNING TDVF on QEMU
+
+* QEMU commands
+`$ /path/to/install_qemu/qemu-system-x86_64 \`  
+`  -no-reboot -name debug-threads=on -enable-kvm -smp 4,sockets=2 -object tdx-guest,id=tdx,debug \`  
+`  -machine q35,accel=kvm,kvm-type=tdx,kernel_irqchip=split,guest-memory-protection=tdx -no-hpet \`  
+`  -cpu host,host-phys-bits,+invtsc \`  
+`  -device loader,file=/path/to/tdvf,id=fd0 \`  
+`  -m 2G -nographic -vga none`
+
+Running a TD requires not only a TDVF but also an updated QEMU/KVM/LinuxGuest. More information visit:  https://github.com/intel/tdx. For example:
+  - The early code of Linux Guest support is at https://github.com/intel/tdx/tree/guest.
+  - The early code of KVM support is at https://github.com/intel/tdx/tree/kvm.
+  - The early code of QEMU support is at TBD.
+
 
 ## Known limitation
 This package is only the sample code to show the concept.
