@@ -85,7 +85,7 @@
   gUefiTdvfPkgTokenSpaceGuid.PcdTdvfInitializeByCfv|TRUE|BOOLEAN|0x20019
   gUefiTdvfPkgTokenSpaceGuid.PcdBfvBase|0x0|UINT32|0x2001B
   gUefiTdvfPkgTokenSpaceGuid.PcdBfvSize|0x0|UINT32|0x2001C
-  gUefiTdvfPkgTokenSpaceGuid.PcdUseTdxEmulation|0x0|UINT32|0x2001D
+  gUefiTdvfPkgTokenSpaceGuid.PcdUseTdxEmulation|0x1|UINT32|0x2001D
   gUefiTdvfPkgTokenSpaceGuid.PcdTdxAcceptPageChunkSize|0x2000|UINT64|0x2001E
   gUefiTdvfPkgTokenSpaceGuid.PcdIgnoreVeHalt|FALSE|BOOLEAN|0x2001F
   gUefiTdvfPkgTokenSpaceGuid.PcdVarsRawDataOffset|0x0|UINT32|0x20020

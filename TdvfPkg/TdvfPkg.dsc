@@ -28,7 +28,7 @@
   DEFINE SECURE_BOOT_ENABLE      = TRUE
   DEFINE QEMU_PLATFORM           = TRUE
   DEFINE SHELL_ENABLE            = FALSE
-  DEFINE TDX_EMULATION_ENABLE    = FALSE
+  DEFINE TDX_EMULATION_ENABLE    = TRUE
   DEFINE SOFT_RTMR               = FALSE
   DEFINE TDX_IGNORE_VE_HLT       = FALSE
   DEFINE TDX_DISABLE_SHARED_MASK = FALSE
@@ -386,8 +386,8 @@
   gEfiMdePkgTokenSpaceGuid.PcdPerformanceLibraryPropertyMask|0xff
   gEfiMdeModulePkgTokenSpaceGuid.PcdEdkiiFpdtStringRecordEnableOnly|TRUE
   gEfiCryptoPkgTokenSpaceGuid.PcdHashApiLibPolicy|0x00000004
-!if $(TDX_EMULATION_ENABLE) == TRUE
-  gUefiTdvfPkgTokenSpaceGuid.PcdUseTdxEmulation|1
+!if $(TDX_EMULATION_ENABLE) == FALSE
+  gUefiTdvfPkgTokenSpaceGuid.PcdUseTdxEmulation|0
 !endif
   gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable|TRUE
 

@@ -180,8 +180,7 @@ TdxDxeEntryPoint (
     PcdSet64S (PcdTdRelocatedMailboxBase, PlatformInfo->RelocatedMailBox);
   }
 
-  if ((FixedPcdGetBool(PcdUseTdxEmulation) == TRUE) ||
-    (PcdGetBool(PcdTdxDisableSharedMask) == TRUE)) {
+  if (PcdGetBool(PcdTdxDisableSharedMask) == TRUE) {
     PcdSet64S (PcdTdxSharedPageMask, 0);
   } else {
     CpuHob = GetFirstHob (EFI_HOB_TYPE_CPU);
