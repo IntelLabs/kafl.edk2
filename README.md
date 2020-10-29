@@ -3,6 +3,8 @@
 
 <b>Intel Trust Domain Extension (TDX)</b> is Intel Architecture extension to provide trusted, isolated VM execution by removing CSP software (hypervisor etc) from the TCB. <b>TDX Virtual Firmware (TDVF)</b> is an EDK II based project to enable UEFI support for TDX based Virtual Machines. It provides the capability to launch a TD.
 
+The <b>Intel® TDX Virtual Firmware Design Guide</b> is at https://software.intel.com/content/dam/develop/external/us/en/documents/tdx-virtual-firmware-design-guide-rev-1.pdf.
+
 More information can be found at:
 https://software.intel.com/content/www/us/en/develop/articles/intel-trust-domain-extensions.html
 
