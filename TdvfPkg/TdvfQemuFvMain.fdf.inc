@@ -122,18 +122,7 @@ INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 
 INF  TdvfPkg/UefiPayload/Tcg/Tcg2Dxe/Tcg2Dxe.inf
 
-INF  TdvfPkg/StorageVolumeKey/Acpi/StorageVolumeKeyAcpi.inf
-INF  TdvfPkg/StorageVolumeKey/HttpKeyLoad/HttpKeyLoad.inf
-!if $(SHELL_ENABLE) == TRUE
-INF  TdvfPkg/StorageVolumeKey/TdTestAgent/TdTestAgentApp.inf
-!endif
 INF TdvfPkg/UefiPayload/IncompatiblePciDeviceSupportDxe/IncompatiblePciDeviceSupport.inf
-
-!include NetworkPkg/Network.fdf.inc
-INF  OvmfPkg/VirtioNetDxe/VirtioNet.inf
-INF  NetworkPkg/HttpDxe/HttpDxe.inf
-INF NetworkPkg/DnsDxe/DnsDxe.inf
-INF NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
 
 
 !if $(USB_ENABLE) == TRUE

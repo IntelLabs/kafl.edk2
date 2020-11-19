@@ -34,14 +34,6 @@
   DEFINE TDX_IGNORE_VE_HLT       = FALSE
   DEFINE TDX_DISABLE_SHARED_MASK = FALSE
 
-  #
-  # Network definition
-  #
-  DEFINE NETWORK_TLS_ENABLE             = TRUE
-  DEFINE NETWORK_IP6_ENABLE             = FALSE
-  DEFINE NETWORK_HTTP_BOOT_ENABLE       = FALSE
-  DEFINE NETWORK_ALLOW_HTTP_CONNECTIONS = TRUE
-
 
   DEFINE USB_ENABLE = TRUE
 
@@ -656,32 +648,6 @@
       TdxLib|TdvfPkg/Library/TdxLib/TdxLib.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
   }
-
-  #
-  # Storage Volume Key Support
-  #
- TdvfPkg/StorageVolumeKey/Acpi/StorageVolumeKeyAcpi.inf
- TdvfPkg/StorageVolumeKey/HttpKeyLoad/HttpKeyLoad.inf
-!if $(SHELL_ENABLE) == TRUE 
- TdvfPkg/StorageVolumeKey/TdTestAgent/TdTestAgentApp.inf
-!endif
-
-
-  #
-  # Network Support
-  #
-!include NetworkPkg/NetworkComponents.dsc.inc
-
-!if $(NETWORK_TLS_ENABLE) == TRUE
-  NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf {
-    <LibraryClasses>
-      NULL|OvmfPkg/Library/TlsAuthConfigLib/TlsAuthConfigLib.inf
-  }
-!endif
-  OvmfPkg/VirtioNetDxe/VirtioNet.inf
-  NetworkPkg/DnsDxe/DnsDxe.inf
-  NetworkPkg/HttpDxe/HttpDxe.inf
-  NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
 
 !if $(USB_ENABLE) == TRUE
   #
