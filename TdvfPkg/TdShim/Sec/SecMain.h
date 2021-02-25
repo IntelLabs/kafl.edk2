@@ -206,13 +206,6 @@ TdxMeasureFvImage (
   IN UINT8                          PcrIndex
   );
 
-EFI_STATUS
-TdxMeasureSystemStates (
-  IN EFI_PHYSICAL_ADDRESS           Base,
-  IN UINT64                         Length,
-  IN UINT8                          PcrIndex
-  );
-
 VOID
 EFIAPI
 AsmGetRelocationMap (
