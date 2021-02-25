@@ -54,7 +54,6 @@
   gEfiFirmwareVolume2ProtocolGuid               # PROTOCOL SOMETIMES_CONSUMED
   gEfiPciIoProtocolGuid                         # PROTOCOL SOMETIMES_CONSUMED
   gEfiMpServiceProtocolGuid                     ## SOMETIMES_CONSUMES
-  gTdTcg2ProtocolGuid                          ## SOMETIMES_CONSUMES
 
 [Guids]
   gRootBridgesConnectedEventGroupGuid
