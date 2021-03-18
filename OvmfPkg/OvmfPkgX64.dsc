@@ -550,7 +550,12 @@
   # DEBUG_VERBOSE   0x00400000  // Detailed debug messages that may
   #                             // significantly impact boot performance
   # DEBUG_ERROR     0x80000000  // Error
+!ifdef $(DEBUG_ON_SERIAL_PORT)
+  gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0xff1fff4f
+!else
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8000004F
+!endif
+
 !if $(TDX_EMULATION_ENABLE) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation|1
 !endif
