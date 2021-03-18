@@ -34,6 +34,7 @@
   MpLib.c
   MpLib.h
   Microcode.c
+  PeiMpLibTdx.c
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -52,6 +53,8 @@
   PeiServicesLib
   PcdLib
   VmgExitLib
+  TdxProbeLib
+  TdxLib
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber        ## CONSUMES

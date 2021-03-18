@@ -15,7 +15,7 @@
 #include <Library/VmgExitLib.h>
 #include <Register/Amd/Fam17Msr.h>
 #include <Register/Amd/Ghcb.h>
-
+#include <Library/TdxProbeLib.h>
 #include <Protocol/Timer.h>
 
 #define  AP_SAFE_STACK_SIZE    128
@@ -784,6 +784,10 @@ MpInitLibStartupThisAP (
 {
   EFI_STATUS              Status;
 
+  if(ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
+
   //
   // temporarily stop checkAllApsStatus for avoid resource dead-lock.
   //
@@ -839,6 +843,10 @@ MpInitLibSwitchBSP (
   EFI_STATUS                   Status;
   EFI_TIMER_ARCH_PROTOCOL      *Timer;
   UINT64                       TimerPeriod;
+
+  if(ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
 
   TimerPeriod = 0;
   //
@@ -912,6 +920,10 @@ MpInitLibEnableDisableAP (
 {
   EFI_STATUS     Status;
   BOOLEAN        TempStopCheckState;
+
+  if(ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
 
   TempStopCheckState = FALSE;
   //
