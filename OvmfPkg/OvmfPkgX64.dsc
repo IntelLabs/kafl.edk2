@@ -36,6 +36,9 @@
   DEFINE TPM_CONFIG_ENABLE       = FALSE
 
   #
+  # TDX flags
+  #
+  DEFINE TDX_EMULATION_ENABLE    = FALSE
   # Network definition
   #
   DEFINE NETWORK_TLS_ENABLE             = FALSE
@@ -533,6 +536,9 @@
   #                             // significantly impact boot performance
   # DEBUG_ERROR     0x80000000  // Error
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x8000004F
+!if $(TDX_EMULATION_ENABLE) == TRUE
+  gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation|1
+!endif
 
 !if $(SOURCE_DEBUG_ENABLE) == TRUE
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x17
