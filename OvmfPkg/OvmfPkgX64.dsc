@@ -267,7 +267,7 @@
   HobLib|MdePkg/Library/SecHobLib/SecHobLib.inf
   PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
-  MemoryAllocationLib|MdePkg/Library/PeiMemoryAllocationLib/PeiMemoryAllocationLib.inf
+  MemoryAllocationLib|MdePkg/Library/SecMemoryAllocationLib/SecMemoryAllocationLib.inf
 !if $(TOOL_CHAIN_TAG) == "XCODE5"
   CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/Xcode5SecPeiCpuExceptionHandlerLib.inf
 !else
