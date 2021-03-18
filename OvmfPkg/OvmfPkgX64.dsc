@@ -283,6 +283,7 @@
 !endif
   VmgExitLib|OvmfPkg/Library/VmgExitLib/SecVmgExitLib.inf
   MemEncryptSevLib|OvmfPkg/Library/BaseMemEncryptSevLib/SecMemEncryptSevLib.inf
+  LocalApicLib|UefiCpuPkg/Library/BaseXApicX2ApicLib/BaseXApicX2ApicLibSec.inf
   TdvfPlatformLib|OvmfPkg/Library/TdvfPlatformLibQemu/TdvfPlatformLibQemuSec.inf
   PrePiLib|OvmfPkg/Library/PrePiLibTdx/PrePiLibTdx.inf
   TdxStartupLib|OvmfPkg/Library/TdxStartupLib/TdxStartupLib.inf
@@ -806,6 +807,10 @@
   OvmfPkg/8259InterruptControllerDxe/8259.inf
   UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
   UefiCpuPkg/CpuDxe/CpuDxe.inf
+  OvmfPkg/LocalApicTimerDxe/LocalApicTimerDxe.inf {
+    <LibraryClasses>
+      LocalApicLib|UefiCpuPkg/Library/BaseXApicX2ApicLib/BaseXApicX2ApicLibDxe.inf  
+  }
   OvmfPkg/8254TimerDxe/8254Timer.inf
   OvmfPkg/IncompatiblePciDeviceSupportDxe/IncompatiblePciDeviceSupport.inf
   OvmfPkg/PciHotPlugInitDxe/PciHotPlugInit.inf
