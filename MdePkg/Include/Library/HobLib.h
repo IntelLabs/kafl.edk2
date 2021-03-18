@@ -473,6 +473,105 @@ BuildMemoryAllocationHob (
   IN EFI_MEMORY_TYPE             MemoryType
   );
 
+
+VOID *
+EFIAPI
+PrePeiGetHobList(
+  VOID
+);
+
+EFI_STATUS
+EFIAPI
+PrePeiSetHobList(
+  IN VOID                       *HobList
+  );
+
+/**
+  Builds a Firmware Volume HOB and a resource descriptor hob
+
+  This function builds a Firmware Volume HOB.
+  It can only be invoked during PEI phase;
+  for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
+  If there is no additional space for HOB creation, then ASSERT().
+
+  @param  BaseAddress   The base address of the Firmware Volume.
+  @param  Length        The size of the Firmware Volume in bytes.
+
+**/
+VOID
+EFIAPI
+BuildFvHobs (
+  IN EFI_PHYSICAL_ADDRESS         PhysicalStart,
+  IN UINT64                       NumberOfBytes,
+  IN EFI_RESOURCE_ATTRIBUTE_TYPE  *ResourceAttribute  OPTIONAL
+  );
+
+
+/**
+  Updates the pointer to the HOB list.
+
+  @param  HobList       Hob list pointer to store
+
+**/
+EFI_STATUS
+EFIAPI
+SetHobList (
+  IN  VOID      *HobList
+  );
+
+EFI_HOB_HANDOFF_INFO_TABLE*
+HobConstructor (
+  IN VOID   *EfiMemoryBegin,
+  IN UINTN  EfiMemoryLength,
+  IN VOID   *EfiFreeMemoryBottom,
+  IN VOID   *EfiFreeMemoryTop
+  );
+
+/**
+  This service enables PEIMs to create various types of HOBs.
+
+  @param  Type                  The type of HOB to be installed.
+  @param  Length                The length of the HOB to be added.
+
+  @retval !NULL                 The HOB was successfully created.
+  @retval NULL                  There is no additional space for HOB creation.
+
+**/
+VOID *
+CreateHob (
+  IN  UINT16    HobType,
+  IN  UINT16    HobLenght
+  );
+
+
+/**
+  This service enables PEIMs to update the boot mode variable.
+
+  @param  BootMode              The value of the boot mode to set.
+
+  @retval EFI_SUCCESS           The value was successfully updated
+
+**/
+EFI_STATUS
+EFIAPI
+SetBootMode (
+  IN EFI_BOOT_MODE              BootMode
+  );
+
+/**
+  Update the Stack Hob if the stack has been moved
+
+  @param  BaseAddress   The 64 bit physical address of the Stack.
+  @param  Length        The length of the stack in bytes.
+
+**/
+VOID
+UpdateStackHob (
+  IN EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN UINT64                      Length
+  );
+
+
 /**
   Returns the type of a HOB.
 
