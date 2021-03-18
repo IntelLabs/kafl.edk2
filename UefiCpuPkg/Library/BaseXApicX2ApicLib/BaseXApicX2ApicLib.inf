@@ -26,6 +26,7 @@
 #
 
 [Sources]
+  ApicLib.c
   BaseXApicX2ApicLib.c
 
 [Packages]
@@ -39,6 +40,7 @@
   IoLib
   PcdLib
   UefiCpuLib
+  TdxProbeLib
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuInitIpiDelayInMicroSeconds  ## SOMETIMES_CONSUMES
