@@ -17,6 +17,10 @@
 #include <Library/PcdLib.h>
 #include <Library/OrderedCollectionLib.h>
 #include <IndustryStandard/Acpi.h>
+#include <Library/TdvfPlatformLib.h>
+#include <IndustryStandard/AcpiTdx.h>
+
+STATIC EFI_HOB_PLATFORM_INFO *mPlatformInfoHob = NULL;
 
 BOOLEAN
 QemuDetected (
@@ -73,6 +77,7 @@ QemuInstallAcpiMadtTable (
   VOID                                                *Ptr;
   UINTN                                               Loop;
   EFI_STATUS                                          Status;
+  ACPI_MADT_MPWK_STRUCT                               *MadtMpWk;
 
   ASSERT (AcpiTableBufferSize >= sizeof (EFI_ACPI_DESCRIPTION_HEADER));
 
@@ -92,6 +97,8 @@ QemuInstallAcpiMadtTable (
                   1                     * sizeof (*IoApic) +
                   (1 + PciLinkIsoCount) * sizeof (*Iso) +
                   1                     * sizeof (*LocalApicNmi);
+
+  NewBufferSize += sizeof(ACPI_MADT_MPWK_STRUCT);
 
   Madt = AllocatePool (NewBufferSize);
   if (Madt == NULL) {
@@ -171,6 +178,17 @@ QemuInstallAcpiMadtTable (
   //
   LocalApicNmi->LocalApicInti   = 0x01;
   Ptr = LocalApicNmi + 1;
+
+  MadtMpWk = Ptr;
+  MadtMpWk->Type = ACPI_MADT_MPWK_STRUCT_TYPE;
+  MadtMpWk->Length = sizeof(ACPI_MADT_MPWK_STRUCT);
+  MadtMpWk->MailBoxVersion = 1;
+  MadtMpWk->Reserved2 = 0;
+  MadtMpWk->MailBoxAddress = PcdGet64 (PcdTdRelocatedMailboxBase);
+  Ptr = MadtMpWk + 1;
+
+  DEBUG ((DEBUG_INFO, "%a:%d:ACPI setting mailbox to 0x%x 0x%x\n", __func__, __LINE__,
+    MadtMpWk->MailBoxAddress, PcdGet64 (PcdTdRelocatedMailboxBase)));
 
   ASSERT ((UINTN) ((UINT8 *)Ptr - (UINT8 *)Madt) == NewBufferSize);
   Status = InstallAcpiTable (AcpiProtocol, Madt, NewBufferSize, TableKey);
@@ -355,13 +373,18 @@ GetSuspendStates (
   //
   // check for overrides
   //
-  Status = QemuFwCfgFindFile ("etc/system-states", &FwCfgItem, &FwCfgSize);
-  if (Status != RETURN_SUCCESS || FwCfgSize != sizeof SystemStates) {
-    DEBUG ((DEBUG_INFO, "ACPI using S3/S4 defaults\n"));
-    return;
+  if (mPlatformInfoHob) {
+    CopyMem(SystemStates, mPlatformInfoHob->SystemStates, sizeof SystemStates);
+    DEBUG ((DEBUG_INFO, ">>>> GetSuspendStates mPlatformInfoHob\n"));
+  } else {
+    Status = QemuFwCfgFindFile ("etc/system-states", &FwCfgItem, &FwCfgSize);
+    if (Status != RETURN_SUCCESS || FwCfgSize != sizeof SystemStates) {
+      DEBUG ((DEBUG_INFO, "ACPI using S3/S4 defaults\n"));
+      return;
+    }
+    QemuFwCfgSelectItem (FwCfgItem);
+    QemuFwCfgReadBytes (sizeof SystemStates, SystemStates);
   }
-  QemuFwCfgSelectItem (FwCfgItem);
-  QemuFwCfgReadBytes (sizeof SystemStates, SystemStates);
 
   //
   // Each byte corresponds to a system state. In each byte, the MSB tells us
@@ -489,6 +512,12 @@ QemuInstallAcpiTable (
 {
   EFI_ACPI_DESCRIPTION_HEADER        *Hdr;
   EFI_ACPI_TABLE_INSTALL_ACPI_TABLE  TableInstallFunction;
+  EFI_HOB_GUID_TYPE                    *GuidHob;
+
+  GuidHob = GetFirstGuidHob(&gUefiOvmfPkgTdxPlatformGuid);
+  if (GuidHob) {
+    mPlatformInfoHob = (EFI_HOB_PLATFORM_INFO *)GET_GUID_HOB_DATA (GuidHob);
+  }
 
   Hdr = (EFI_ACPI_DESCRIPTION_HEADER*) AcpiTableBuffer;
   switch (Hdr->Signature) {

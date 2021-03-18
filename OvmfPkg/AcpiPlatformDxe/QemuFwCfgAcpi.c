@@ -18,7 +18,7 @@
 #include <Library/PcdLib.h>
 #include <Library/OrderedCollectionLib.h>
 #include <IndustryStandard/Acpi.h>
-
+#include <Library/TdxProbeLib.h>
 
 //
 // The user structure for the ordered collection that will track the fw_cfg
@@ -913,9 +913,16 @@ Process2ndPassCmdAddPointer (
     goto RollbackSeenPointer;
   }
 
-  Status = AcpiProtocol->InstallAcpiTable (AcpiProtocol,
+  if(ProbeTdGuest()) {
+    Status = QemuInstallAcpiTable(AcpiProtocol,
                            (VOID *)(UINTN)PointerValue, TableSize,
                            &InstalledKey[*NumInstalled]);
+  } else {
+    Status = AcpiProtocol->InstallAcpiTable (AcpiProtocol,
+                           (VOID *)(UINTN)PointerValue, TableSize,
+                           &InstalledKey[*NumInstalled]);
+  }
+
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: InstallAcpiTable(): %r\n", __FUNCTION__,
       Status));

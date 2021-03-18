@@ -59,6 +59,7 @@
 
 [Guids]
   gRootBridgesConnectedEventGroupGuid
+  gUefiOvmfPkgTdxPlatformGuid
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiTableStorageFile
@@ -66,6 +67,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdCpuLocalApicBaseAddress
   gUefiOvmfPkgTokenSpaceGuid.Pcd8259LegacyModeEdgeLevel
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFdBaseAddress
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdRelocatedMailboxBase
 
 [Depex]
   gEfiAcpiTableProtocolGuid
