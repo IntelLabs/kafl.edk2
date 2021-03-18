@@ -42,6 +42,7 @@
   DebugLib
   IoLib
   MemoryAllocationLib
+  MemEncryptTdxLib
   MemEncryptSevLib
 
 [Protocols]
