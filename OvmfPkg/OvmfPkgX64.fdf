@@ -100,6 +100,10 @@ DATA = {
   0x00,0x00,0x00,0x00,
   0x00,0x00,0x00,0x00
 }
+
+0x00E000|0x001000
+gUefiOvmfPkgTokenSpaceGuid.PcdTdHobBase|gUefiOvmfPkgTokenSpaceGuid.PcdTdHobSize
+
 0x010000|0x010000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize
 
