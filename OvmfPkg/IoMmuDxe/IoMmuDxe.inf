@@ -18,8 +18,8 @@
   ENTRY_POINT                    = IoMmuDxeEntryPoint
 
 [Sources]
-  AmdSevIoMmu.c
-  AmdSevIoMmu.h
+  IoMmu.c
+  IoMmu.h
   IoMmuDxe.c
 
 [Packages]
@@ -32,6 +32,7 @@
   BaseMemoryLib
   DebugLib
   MemEncryptSevLib
+  MemEncryptTdxLib
   MemoryAllocationLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
