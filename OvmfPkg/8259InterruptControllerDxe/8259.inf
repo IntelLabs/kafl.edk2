@@ -29,6 +29,7 @@
   UefiDriverEntryPoint
   IoLib
   PcdLib
+  TdxProbeLib
 
 [Protocols]
   gEfiLegacy8259ProtocolGuid                    ## PRODUCES

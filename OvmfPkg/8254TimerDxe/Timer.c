@@ -7,6 +7,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "Timer.h"
+#include <Library/TdxProbeLib.h>
 
 //
 // The handle onto which the Timer Architectural Protocol will be installed
@@ -339,6 +340,10 @@ TimerDriverInitialize (
 {
   EFI_STATUS  Status;
   UINT32      TimerVector;
+
+  if(ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
 
   //
   // Initialize the pointer to our notify function.

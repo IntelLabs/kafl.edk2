@@ -8,6 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "8259.h"
 
+#include <Library/TdxProbeLib.h>
 //
 // Global for the Legacy 8259 Protocol that is produced by this driver
 //
@@ -586,6 +587,9 @@ Install8259 (
   EFI_STATUS   Status;
   EFI_8259_IRQ Irq;
 
+  if(ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
   //
   // Initialze mask values from PCDs
   //

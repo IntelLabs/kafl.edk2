@@ -26,6 +26,7 @@
   DebugLib
   UefiDriverEntryPoint
   IoLib
+  TdxProbeLib
 
 [Sources]
   Timer.h
