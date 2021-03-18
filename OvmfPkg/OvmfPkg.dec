@@ -330,6 +330,8 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdBfvBase|0|UINT32|0x51
   gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataOffset|0|UINT32|0x52
   gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataSize|0|UINT32|0x53
+
+  gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|FALSE|BOOLEAN|0x54
   gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation|0x0|UINT32|0x55
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfImageSizeInKb|0|UINT32|0x58
 [PcdsDynamic, PcdsDynamicEx]

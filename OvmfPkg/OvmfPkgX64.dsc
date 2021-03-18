@@ -38,6 +38,7 @@
   #
   # TDX flags
   #
+  DEFINE TDX_IGNORE_VE_HLT       = FALSE
   DEFINE TDX_EMULATION_ENABLE    = FALSE
   # Network definition
   #
@@ -572,6 +573,12 @@
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiReservedMemoryType|0x80
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiRuntimeServicesCode|0x100
   gEmbeddedTokenSpaceGuid.PcdMemoryTypeEfiRuntimeServicesData|0x100
+  #
+  # TDX Pcds
+  #
+!if $(TDX_IGNORE_VE_HLT) == TRUE
+  gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|TRUE
+!endif
 
   #
   # Network Pcds
