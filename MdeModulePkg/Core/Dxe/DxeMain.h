@@ -289,6 +289,8 @@ extern EFI_RUNTIME_ARCH_PROTOCOL                gRuntimeTemplate;
 
 extern EFI_LOAD_FIXED_ADDRESS_CONFIGURATION_TABLE    gLoadModuleAtFixAddressConfigurationTable;
 extern BOOLEAN                                       gLoadFixedAddressCodeMemoryReady;
+
+extern BOOLEAN                                       gTdGuest;
 //
 // Service Initialization Functions
 //

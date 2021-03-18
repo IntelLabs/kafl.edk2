@@ -1,7 +1,7 @@
 /** @file
   Implements functions to read firmware file
 
-Copyright (c) 2006 - 2020, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -128,6 +128,7 @@ FvGetNextFile (
   UINTN                                       *KeyValue;
   LIST_ENTRY                                  *Link;
   FFS_FILE_LIST_ENTRY                         *FfsFileEntry;
+  UINTN                                       MaxFileType;
 
   FvDevice = FV_DEVICE_FROM_THIS (This);
 
@@ -143,7 +144,16 @@ FvGetNextFile (
     return EFI_ACCESS_DENIED;
   }
 
-  if (*FileType > EFI_FV_FILETYPE_MM_CORE_STANDALONE) {
+  //
+  // Td guest doesn't support SMM
+  //
+  if(gTdGuest) {
+    MaxFileType = EFI_FV_FILETYPE_SMM_CORE;
+  } else {
+    MaxFileType = EFI_FV_FILETYPE_MM_CORE_STANDALONE;
+  }
+
+  if (*FileType > MaxFileType) {
     //
     // File type needs to be in 0 - 0x0F
     //

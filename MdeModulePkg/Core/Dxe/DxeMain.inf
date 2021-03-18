@@ -94,6 +94,7 @@
   DebugAgentLib
   CpuExceptionHandlerLib
   PcdLib
+  TdxProbeLib
 
 [Guids]
   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event

@@ -7,6 +7,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "DxeMain.h"
+#include <Library/TdxProbeLib.h>
+
+BOOLEAN gTdGuest = FALSE;
 
 //
 // DXE Core Global Variables for Protocols from PEI
@@ -243,6 +246,11 @@ DxeMain (
   EFI_VECTOR_HANDOFF_INFO       *VectorInfoList;
   EFI_VECTOR_HANDOFF_INFO       *VectorInfo;
   VOID                          *EntryPoint;
+
+  //
+  // Check whether it is of Td guest
+  //
+  gTdGuest = ProbeTdGuest();
 
   //
   // Setup the default exception handlers

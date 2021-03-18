@@ -42,6 +42,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "DxeMain.h"
 #include "Mem/HeapGuard.h"
 
+// TD
+#define CACHE_ATTRIBUTE_MASK   (EFI_MEMORY_UC | EFI_MEMORY_WC | EFI_MEMORY_WT | EFI_MEMORY_WB | EFI_MEMORY_UCE | EFI_MEMORY_WP)
+#define MEMORY_ATTRIBUTE_MASK  (EFI_MEMORY_RP | EFI_MEMORY_XP | EFI_MEMORY_RO)
+
 //
 // Image type definitions
 //
@@ -218,7 +222,11 @@ SetUefiImageMemoryAttributes (
   Status = CoreGetMemorySpaceDescriptor(BaseAddress, &Descriptor);
   ASSERT_EFI_ERROR(Status);
 
-  FinalAttributes = (Descriptor.Attributes & EFI_CACHE_ATTRIBUTE_MASK) | (Attributes & EFI_MEMORY_ATTRIBUTE_MASK);
+  if(gTdGuest) {
+    FinalAttributes = (Descriptor.Attributes & CACHE_ATTRIBUTE_MASK) | (Attributes & MEMORY_ATTRIBUTE_MASK);
+  } else {
+    FinalAttributes = (Descriptor.Attributes & EFI_CACHE_ATTRIBUTE_MASK) | (Attributes & EFI_MEMORY_ATTRIBUTE_MASK);
+  }
 
   DEBUG ((DEBUG_INFO, "SetUefiImageMemoryAttributes - 0x%016lx - 0x%016lx (0x%016lx)\n", BaseAddress, Length, FinalAttributes));
 
@@ -920,8 +928,13 @@ InitializeDxeNxMemoryProtectionPolicy (
           (Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
             (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)) {
 
-        Attributes = GetPermissionAttributeForMemoryType (EfiConventionalMemory) |
+        if(gTdGuest) {
+          Attributes = GetPermissionAttributeForMemoryType (EfiConventionalMemory) |
+                     (Entry->Attributes & CACHE_ATTRIBUTE_MASK);
+        } else {
+          Attributes = GetPermissionAttributeForMemoryType (EfiConventionalMemory) |
                      (Entry->Attributes & EFI_CACHE_ATTRIBUTE_MASK);
+        }
 
         DEBUG ((DEBUG_INFO,
           "Untested GCD memory space region: - 0x%016lx - 0x%016lx (0x%016lx)\n",

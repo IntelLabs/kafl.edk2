@@ -1856,8 +1856,14 @@ CoreGetMemoryMap (
       MemoryMap->PhysicalStart = MergeGcdMapEntry.BaseAddress;
       MemoryMap->VirtualStart  = 0;
       MemoryMap->NumberOfPages = RShiftU64 ((MergeGcdMapEntry.EndAddress - MergeGcdMapEntry.BaseAddress + 1), EFI_PAGE_SHIFT);
-      MemoryMap->Attribute     = (MergeGcdMapEntry.Attributes & ~EFI_MEMORY_PORT_IO) |
+      if(gTdGuest) {
+        MemoryMap->Attribute   = (MergeGcdMapEntry.Attributes & ~EFI_MEMORY_PORT_IO) |
+                                (MergeGcdMapEntry.Capabilities & (EFI_MEMORY_RP | EFI_MEMORY_WP | EFI_MEMORY_XP | EFI_MEMORY_RO |
+                                EFI_MEMORY_UC | EFI_MEMORY_UCE | EFI_MEMORY_WC | EFI_MEMORY_WT | EFI_MEMORY_WB));
+      } else {
+        MemoryMap->Attribute   = (MergeGcdMapEntry.Attributes & ~EFI_MEMORY_PORT_IO) |
                                 (MergeGcdMapEntry.Capabilities & (EFI_CACHE_ATTRIBUTE_MASK | EFI_MEMORY_ATTRIBUTE_MASK));
+      }
 
       if (MergeGcdMapEntry.GcdMemoryType == EfiGcdMemoryTypeReserved) {
         MemoryMap->Type = EfiReservedMemoryType;
@@ -1890,8 +1896,14 @@ CoreGetMemoryMap (
       MemoryMap->PhysicalStart = MergeGcdMapEntry.BaseAddress;
       MemoryMap->VirtualStart  = 0;
       MemoryMap->NumberOfPages = RShiftU64 ((MergeGcdMapEntry.EndAddress - MergeGcdMapEntry.BaseAddress + 1), EFI_PAGE_SHIFT);
-      MemoryMap->Attribute     = MergeGcdMapEntry.Attributes | EFI_MEMORY_NV |
+      if(gTdGuest) {
+        MemoryMap->Attribute   = MergeGcdMapEntry.Attributes | EFI_MEMORY_NV |
+                                (MergeGcdMapEntry.Capabilities & (EFI_MEMORY_RP | EFI_MEMORY_WP | EFI_MEMORY_XP | EFI_MEMORY_RO |
+                                EFI_MEMORY_UC | EFI_MEMORY_UCE | EFI_MEMORY_WC | EFI_MEMORY_WT | EFI_MEMORY_WB));
+      } else {
+        MemoryMap->Attribute   = MergeGcdMapEntry.Attributes | EFI_MEMORY_NV |
                                 (MergeGcdMapEntry.Capabilities & (EFI_CACHE_ATTRIBUTE_MASK | EFI_MEMORY_ATTRIBUTE_MASK));
+      }
       MemoryMap->Type          = EfiPersistentMemory;
 
       //
@@ -1933,7 +1945,12 @@ CoreGetMemoryMap (
   MemoryMapEnd = MemoryMap;
   MemoryMap = MemoryMapStart;
   while (MemoryMap < MemoryMapEnd) {
-    MemoryMap->Attribute &= ~(UINT64)EFI_MEMORY_ACCESS_MASK;
+    if(gTdGuest) {
+      MemoryMap->Attribute &= ~(UINT64)(EFI_MEMORY_RP | EFI_MEMORY_RO |
+                                      EFI_MEMORY_XP);
+    } else {
+      MemoryMap->Attribute &= ~(UINT64)EFI_MEMORY_ACCESS_MASK;
+    }
     MemoryMap = NEXT_MEMORY_DESCRIPTOR (MemoryMap, Size);
   }
   MergeMemoryMap (MemoryMapStart, &BufferSize, Size);
