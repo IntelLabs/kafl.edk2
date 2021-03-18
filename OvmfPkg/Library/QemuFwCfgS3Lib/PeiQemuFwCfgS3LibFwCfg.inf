@@ -37,3 +37,4 @@
 [LibraryClasses]
   DebugLib
   QemuFwCfgLib
+  TdxProbeLib

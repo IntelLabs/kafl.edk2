@@ -9,6 +9,7 @@
 
 #include <Library/QemuFwCfgLib.h>
 #include <Library/QemuFwCfgS3Lib.h>
+#include <Library/TdxProbeLib.h>
 
 /**
   Determine if S3 support is explicitly enabled.
@@ -27,16 +28,23 @@ QemuFwCfgS3Enabled (
   VOID
   )
 {
-  RETURN_STATUS        Status;
-  FIRMWARE_CONFIG_ITEM FwCfgItem;
-  UINTN                FwCfgSize;
-  UINT8                SystemStates[6];
+  RETURN_STATUS          Status;
+  FIRMWARE_CONFIG_ITEM   FwCfgItem;
+  UINTN                  FwCfgSize;
+  UINT8                  SystemStates[6];
 
-  Status = QemuFwCfgFindFile ("etc/system-states", &FwCfgItem, &FwCfgSize);
-  if (Status != RETURN_SUCCESS || FwCfgSize != sizeof SystemStates) {
+  if (ProbeTdGuest()) {
+    
     return FALSE;
+    
+  } else {
+
+    Status = QemuFwCfgFindFile ("etc/system-states", &FwCfgItem, &FwCfgSize);
+    if (Status != RETURN_SUCCESS || FwCfgSize != sizeof SystemStates) {
+      return FALSE;
+    }
+    QemuFwCfgSelectItem (FwCfgItem);
+    QemuFwCfgReadBytes (sizeof SystemStates, SystemStates);
+    return (BOOLEAN) (SystemStates[3] & BIT7);
   }
-  QemuFwCfgSelectItem (FwCfgItem);
-  QemuFwCfgReadBytes (sizeof SystemStates, SystemStates);
-  return (BOOLEAN) (SystemStates[3] & BIT7);
 }

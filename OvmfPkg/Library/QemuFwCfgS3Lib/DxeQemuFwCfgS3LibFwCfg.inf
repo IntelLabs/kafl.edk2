@@ -36,6 +36,7 @@
   MemoryAllocationLib
   QemuFwCfgLib
   UefiBootServicesTableLib
+  TdxProbeLib
 
 [Protocols]
   gEfiS3SaveStateProtocolGuid ## SOMETIMES_CONSUMES
