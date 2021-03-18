@@ -41,6 +41,7 @@
   UefiDriverEntryPoint
   DebugLib
   PcdLib
+  TdxProbeLib
 
 [Protocols]
   gEfiSmbiosProtocolGuid                            ## PRODUCES
