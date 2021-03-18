@@ -9,6 +9,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include "PciBus.h"
 
+#include <Library/TdxProbeLib.h>
+
 /**
   This routine is used to enumerate entire pci bus system
   in a given platform.
@@ -533,6 +535,9 @@ GetMaxOptionRomSize (
   UINT32          TempOptionRomSize;
 
   MaxOptionRomSize = 0;
+  if(ProbeTdGuest()) {
+    return 0;
+  }
 
   //
   // Go through bridges to reach all devices
