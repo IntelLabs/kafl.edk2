@@ -1,7 +1,7 @@
 ## @file
 #  Reset Vector
 #
-#  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -44,6 +44,23 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize
 
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdHobBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdHobSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdTempStackBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdTempStackSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdTempHeapBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdTempHeapSize
+
+  gUefiOvmfPkgTokenSpaceGuid.PcdCfvBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdCfvRawDataOffset
+  gUefiOvmfPkgTokenSpaceGuid.PcdCfvRawDataSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdBfvBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataOffset
+  gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataSize
+
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfImageSizeInKb
 [FixedPcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdSevLaunchSecretBase
   gUefiOvmfPkgTokenSpaceGuid.PcdSevLaunchSecretSize

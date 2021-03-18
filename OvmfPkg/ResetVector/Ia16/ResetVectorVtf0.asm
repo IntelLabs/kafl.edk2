@@ -21,8 +21,12 @@ ALIGN   16
 ; This is required so the page tables will be 4k aligned when VTF0 is
 ; located just below 0x100000000 (4GB) in the firmware device.
 ;
-%ifdef ALIGN_TOP_TO_4K_FOR_PAGING
+; For TDX_VIRTUAL_FIRMWARE the padding is in X64\TdxMetadata.asm.
+;
+%ifndef TDX_VIRTUAL_FIRMWARE
+  %ifdef ALIGN_TOP_TO_4K_FOR_PAGING
     TIMES (0x1000 - ($ - EndOfPageTables) - 0x20) DB 0
+  %endif
 %endif
 
 ;
@@ -115,11 +119,23 @@ applicationProcessorEntryPoint:
 ; location.  (0xffffffe0)  This allows the Local APIC Startup IPI to be
 ; used to wake up the application processors.
 ;
+%ifdef TDX_VIRTUAL_FIRMWARE
+    DD      (OVMF_IMAGE_SIZE_IN_KB * 1024 - (fourGigabytes - TdxMetadataGuid - 16))
+%else
     jmp     EarlyApInitReal16
+%endif
 
 ALIGN   8
 
+;
+; TDX Virtual Firmware injects metadata in VTF0.
+; The address of the metadata is injected in this location (0xffffffe8)
+;
+%ifdef TDX_VIRTUAL_FIRMWARE
+    DD      (OVMF_IMAGE_SIZE_IN_KB * 1024 - (fourGigabytes - TdxMetadataGuid - 16))
+%else
     DD      0
+%endif
 
 ;
 ; The VTF signature
@@ -138,8 +154,22 @@ resetVector:
 ;
 ; This is where the processor will begin execution
 ;
+; TDX_VIRTUAL_FIRMWARE is defined in X64/TdxMetadata.asm
+; For TDX_VIRTAUL_FIRMWARE, it is of Protected mode in ResetVector
+; Note:
+;   The distance between ResetVector and EarlyBspPmEntry should
+;   be less than 128 bytes.
+;   DO NOT ADD MORE DATA between ResetVector and EarlyBspPmEntry
+;
     nop
     nop
+
+%ifdef TDX_VIRTUAL_FIRMWARE
+    smsw    ax
+    test    al, 1
+    jnz     EarlyBspPmEntry
+%endif
+
     jmp     EarlyBspInitReal16
 
 ALIGN   16

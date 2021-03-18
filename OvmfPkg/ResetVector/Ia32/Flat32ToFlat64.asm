@@ -14,6 +14,8 @@ BITS    32
 ; Modified:  EAX, ECX, EDX
 ;
 Transition32FlatTo64Flat:
+    cmp     byte[TDX_WORK_AREA], 1
+    jz      TdxTransition32FlatTo64Flat
 
     OneTimeCall SetCr3ForPageTables64
 
@@ -26,6 +28,7 @@ Transition32FlatTo64Flat:
     bts     eax, 8                      ; set LME
     wrmsr
 
+SevEsMitigationCheck:
     ;
     ; SEV-ES mitigation check support
     ;
@@ -65,9 +68,52 @@ EnablePaging:
     bts     eax, 31                     ; set PG
     mov     cr0, eax                    ; enable paging
 
+    jmp     _jumpTo64Bit
+
+;
+; Tdx Transition from 32Flat to 64Flat
+; Tdx use the page table built in Vtf0 for quicker performance
+;
+TdxTransition32FlatTo64Flat:
+    mov     eax, cr4
+    bts     eax, 5                      ; enable PAE
+
+    ;
+    ; byte[TDX_WORK_AREA_PAGELEVEL5] holds the indicator whether 52bit is supported.
+    ; if it is the case, need to set LA57 and use 5-level paging
+    ;
+    cmp     byte[TDX_WORK_AREA_PAGELEVEL5], 0
+    jz      .set_cr4
+    bts     eax, 12
+.set_cr4:
+    mov     cr4, eax
+
+    mov     ebx, ADDR_OF(TopLevelPageDirectory)
+    ;
+    ; if we just set la57, we are ok, if using 4-level paging, adjust top-level page directory
+    ;
+    bt      eax, 12
+    jc      .set_cr3
+    add     ebx, 0x1000
+.set_cr3:
+    mov     cr3, ebx
+
+    mov     eax, cr0
+    bts     eax, 31                     ; set PG
+    mov     cr0, eax                    ; enable paging
+
+_jumpTo64Bit:
     jmp     LINEAR_CODE64_SEL:ADDR_OF(jumpTo64BitAndLandHere)
+
 BITS    64
 jumpTo64BitAndLandHere:
+
+    ;
+    ; For Td guest we are done and jump to the end
+    ;
+    mov     eax, TDX_WORK_AREA
+    cmp     byte[eax], 1
+    jz     GoodCompare
 
     ;
     ; Check if the second step of the SEV-ES mitigation is to be performed.

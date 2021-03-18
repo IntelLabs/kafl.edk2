@@ -4,6 +4,7 @@
 ;
 ; Copyright (c) 2008 - 2013, Intel Corporation. All rights reserved.<BR>
 ; Copyright (c) 2020, Advanced Micro Devices, Inc. All rights reserved.<BR>
+; Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ;------------------------------------------------------------------------------
@@ -35,6 +36,56 @@
 %include "CommonMacros.inc"
 
 %include "PostCodes.inc"
+
+
+%ifdef ARCH_X64
+
+  ;
+  ; TdMailboxBase[0x10, 0x800] is reserved for OS
+  ; Td guest uses this area (TdMailboxBase[0x10,0x20]) to record the Td guest info
+  ; SEC can determine Td guest by this information
+  ;
+  %define TD_MAILBOX_WORKAREA_OFFSET  0x10
+  %define TDX_WORK_AREA (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET)
+  %define TDX_WORK_AREA_PAGELEVEL5 (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 1)
+  %define TDX_WORK_AREA_INITVP (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 8)
+  %define TDX_WORK_AREA_INFO (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 8 + 4)
+
+  ;
+  ; TDX meta data
+  ;
+  %define TDX_METADATA_SECTION_TYPE_BFV       0
+  %define TDX_METADATA_SECTION_TYPE_CFV       1
+  %define TDX_METADATA_SECTION_TYPE_TD_HOB    2
+  %define TDX_METADATA_SECTION_TYPE_TEMP_MEM  3
+  %define TDX_METADATA_VERSION                1
+  %define TDX_METADATA_ATTRIBUTES_EXTENDMR    0x00000001
+
+  %define TDX_BFV_RAW_DATA_OFFSET   FixedPcdGet32(PcdBfvRawDataOffset)
+  %define TDX_BFV_RAW_DATA_SIZE     FixedPcdGet32(PcdBfvRawDataSize)
+  %define TDX_BFV_MEMORY_BASE       FixedPcdGet32(PcdBfvBase)
+  %define TDX_BFV_MEMORY_SIZE       FixedPcdGet32(PcdBfvRawDataSize)
+
+  %define TDX_CFV_RAW_DATA_OFFSET   FixedPcdGet32(PcdCfvRawDataOffset)
+  %define TDX_CFV_RAW_DATA_SIZE     FixedPcdGet32(PcdCfvRawDataSize)
+  %define TDX_CFV_MEMORY_BASE       FixedPcdGet32(PcdCfvBase),
+  %define TDX_CFV_MEMORY_SIZE       FixedPcdGet32(PcdCfvRawDataSize),
+
+  %define TDX_STACK_MEMORY_BASE     (FixedPcdGet32(PcdOvmfSecPeiTempRamBase) + FixedPcdGet32(PcdOvmfSecPeiTempRamSize)/2)
+  %define TDX_STACK_MEMORY_SIZE     (FixedPcdGet32(PcdOvmfSecPeiTempRamSize)/2)
+
+  %define TDX_HEAP_MEMORY_BASE      (FixedPcdGet32(PcdOvmfSecPeiTempRamBase))
+  %define TDX_HEAP_MEMORY_SIZE      (FixedPcdGet32(PcdOvmfSecPeiTempRamSize)/2)
+
+  %define TDX_HOB_MEMORY_BASE       FixedPcdGet32(PcdTdHobBase)
+  %define TDX_HOB_MEMORY_SIZE       FixedPcdGet32(PcdTdHobSize)
+
+  %define TDX_MAILBOX_MEMORY_BASE   FixedPcdGet32(PcdTdMailboxBase)
+  %define TDX_MAILBOX_MEMORY_SIZE   FixedPcdGet32(PcdTdMailboxSize)
+
+  %include "X64/PageTables.asm"
+  %include "X64/TdxMetadata.asm"
+%endif
 
 %ifdef DEBUG_PORT80
   %include "Port80Debug.asm"
@@ -76,17 +127,30 @@
   %define SEV_ES_WORK_AREA_RDRAND (FixedPcdGet32 (PcdSevEsWorkAreaBase) + 8)
   %define SEV_ES_WORK_AREA_ENC_MASK (FixedPcdGet32 (PcdSevEsWorkAreaBase) + 16)
   %define SEV_ES_VC_TOP_OF_STACK (FixedPcdGet32 (PcdOvmfSecPeiTempRamBase) + FixedPcdGet32 (PcdOvmfSecPeiTempRamSize))
-%include "Ia32/Flat32ToFlat64.asm"
-%include "Ia32/PageTables64.asm"
+
+  ;
+  ; TDX specific
+  ;
+  %if (FixedPcdGet32 (PcdTdMailboxSize) != 0x1000)
+    %error "This implementation inherently depends on PcdTdMailboxSize"
+  %endif
+
+  %if (FixedPcdGet32 (PcdTdHobSize) != 0x1000)
+    %error "This implementation inherently depends on PcdTdHobSize"
+  %endif
+
+  %include "Ia32/Flat32ToFlat64.asm"
+  %include "Ia32/PageTables64.asm"
+  %include "Ia32/ReloadFlat32.asm"
 %endif
 
 %include "Ia16/Real16ToFlat32.asm"
-%include "Ia16/Init16.asm"
-
 %include "Main.asm"
 
   %define SEV_ES_AP_RESET_IP  FixedPcdGet32 (PcdSevEsWorkAreaBase)
   %define SEV_LAUNCH_SECRET_BASE  FixedPcdGet32 (PcdSevLaunchSecretBase)
   %define SEV_LAUNCH_SECRET_SIZE  FixedPcdGet32 (PcdSevLaunchSecretSize)
+  %define OVMF_IMAGE_SIZE_IN_KB   FixedPcdGet32 (PcdOvmfImageSizeInKb)
+%include "Ia16/Init16.asm"
 %include "Ia16/ResetVectorVtf0.asm"
 

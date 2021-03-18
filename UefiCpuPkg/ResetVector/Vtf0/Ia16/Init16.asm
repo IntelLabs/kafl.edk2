@@ -40,3 +40,8 @@ EarlyInit16:
 
     OneTimeCallRet EarlyInit16
 
+;
+; Protected Mode entry point for Early BSP
+;
+EarlyBspPmEntry:
+    jmp     MainTd
