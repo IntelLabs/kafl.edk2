@@ -30,6 +30,7 @@
   PcdLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
+  TdxProbeLib
 
 [Protocols]
   gEfiIncompatiblePciDeviceSupportProtocolGuid ## SOMETIMES_PRODUCES

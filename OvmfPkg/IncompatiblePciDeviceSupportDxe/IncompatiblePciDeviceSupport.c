@@ -19,6 +19,7 @@
 
 #include <Protocol/IncompatiblePciDeviceSupport.h>
 #include <Protocol/LegacyBios.h>
+#include <Library/TdxProbeLib.h>
 
 //
 // The Legacy BIOS protocol has been located.
@@ -45,9 +46,15 @@ typedef struct {
   EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR AddressSpaceDesc;
   EFI_ACPI_END_TAG_DESCRIPTOR       EndDesc;
 } MMIO64_PREFERENCE;
+
+typedef struct {
+  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR AddressSpaceDesc;
+  EFI_ACPI_END_TAG_DESCRIPTOR       EndDesc;
+} OPTION_ROM_PREFERENCE;
+
 #pragma pack ()
 
-STATIC CONST MMIO64_PREFERENCE mConfiguration = {
+STATIC CONST MMIO64_PREFERENCE mMmio6Configuration = {
   //
   // AddressSpaceDesc
   //
@@ -68,6 +75,44 @@ STATIC CONST MMIO64_PREFERENCE mConfiguration = {
                                                    //   for BAR allocation
     0,                                             // AddrRangeMin
     0,                                             // AddrRangeMax:
+                                                   //   no special alignment
+                                                   //   for affected BARs
+    MAX_UINT64,                                    // AddrTranslationOffset:
+                                                   //   hint covers all
+                                                   //   eligible BARs
+    0                                              // AddrLen:
+                                                   //   use probed BAR size
+  },
+  //
+  // EndDesc
+  //
+  {
+    ACPI_END_TAG_DESCRIPTOR,                       // Desc
+    0                                              // Checksum: to be ignored
+  }
+};
+
+STATIC CONST OPTION_ROM_PREFERENCE mOptionRomConfiguration = {
+  //
+  // AddressSpaceDesc
+  //
+  {
+    ACPI_ADDRESS_SPACE_DESCRIPTOR,                 // Desc
+    (UINT16)(                                      // Len
+      sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) -
+      OFFSET_OF (
+        EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR,
+        ResType
+        )
+      ),
+    ACPI_ADDRESS_SPACE_TYPE_MEM,                   // ResType
+    0,                                             // GenFlag
+    BIT0,                                          // Disable option roms SpecificFlag
+    64,                                            // AddrSpaceGranularity:
+                                                   //   aperture selection hint
+                                                   //   for BAR allocation
+    MAX_UINT64,                                    // AddrRangeMin
+    MAX_UINT64,                                    // AddrRangeMax:
                                                    //   no special alignment
                                                    //   for affected BARs
     MAX_UINT64,                                    // AddrTranslationOffset:
@@ -201,7 +246,20 @@ CheckDevice (
   OUT VOID                                          **Configuration
   )
 {
+  CONST VOID  *ConfigurationPtr;
+  UINTN       ConfigurationSize;
+  BOOLEAN     TdGuest;
+
   mCheckDeviceCalled = TRUE;
+  TdGuest = ProbeTdGuest();
+  if(TdGuest) {
+    ConfigurationPtr = &mOptionRomConfiguration;
+    ConfigurationSize = sizeof(mOptionRomConfiguration);
+    goto AllocateConfiguration;
+  } else {
+    ConfigurationPtr = &mMmio6Configuration;
+    ConfigurationSize = sizeof(mMmio6Configuration);
+  }
 
   //
   // Unlike the general description of this protocol member suggests, there is
@@ -231,11 +289,19 @@ CheckDevice (
   // the edk2 PCI Bus UEFI_DRIVER actually handles error codes; see the
   // UpdatePciInfo() function.
   //
-  *Configuration = AllocateCopyPool (sizeof mConfiguration, &mConfiguration);
+AllocateConfiguration:  
+  *Configuration = AllocateCopyPool (ConfigurationSize, ConfigurationPtr);
   if (*Configuration == NULL) {
+    if(TdGuest) {
     DEBUG ((DEBUG_WARN,
-      "%a: 64-bit MMIO BARs may be degraded for PCI 0x%04x:0x%04x (rev %d)\n",
-      __FUNCTION__, (UINT32)VendorId, (UINT32)DeviceId, (UINT8)RevisionId));
+      "%a: Check device for Option ROM of PCI 0x%04x:0x%04x (rev %d) failed.\n\n",
+      __FUNCTION__, (UINT32)VendorId, (UINT32)DeviceId, (UINT8)RevisionId));      
+    } else {
+      DEBUG ((DEBUG_WARN,
+        "%a: 64-bit MMIO BARs may be degraded for PCI 0x%04x:0x%04x (rev %d)\n",
+        __FUNCTION__, (UINT32)VendorId, (UINT32)DeviceId, (UINT8)RevisionId));
+    }
+    
     return EFI_OUT_OF_RESOURCES;
   }
   return EFI_SUCCESS;
@@ -264,6 +330,10 @@ DriverInitialize (
   EFI_STATUS Status;
   EFI_EVENT  Event;
   VOID       *Registration;
+
+  if(ProbeTdGuest()) {
+    goto InstallProtocol;
+  }
 
   //
   // If the PCI Bus driver is not supposed to allocate resources, then it makes
@@ -326,6 +396,7 @@ DriverInitialize (
   Status = gBS->SignalEvent (Event);
   ASSERT_EFI_ERROR (Status);
 
+InstallProtocol:
   mIncompatiblePciDeviceSupport.CheckDevice = CheckDevice;
   Status = gBS->InstallMultipleProtocolInterfaces (&ImageHandle,
                   &gEfiIncompatiblePciDeviceSupportProtocolGuid,
