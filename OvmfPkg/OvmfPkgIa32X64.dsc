@@ -243,6 +243,7 @@
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
   VmgExitLib|UefiCpuPkg/Library/VmgExitLibNull/VmgExitLibNull.inf
   TdxLib|MdePkg/Library/TdxLib/TdxLibNull.inf
+  TdxStartupLib|OvmfPkg/Library/TdxStartupLib/TdxStartupLibNull.inf
   TdxProbeLib|MdePkg/Library/TdxProbeLib/TdxProbeLibNull.inf
   VmTdExitLib|UefiCpuPkg/Library/VmTdExitLibNull/VmTdExitLibNull.inf
 

@@ -240,6 +240,7 @@
   VmgExitLib|UefiCpuPkg/Library/VmgExitLibNull/VmgExitLibNull.inf
   TdxLib|MdePkg/Library/TdxLib/TdxLibNull.inf
   TdxProbeLib|MdePkg/Library/TdxProbeLib/TdxProbeLibNull.inf
+  TdxStartupLib|OvmfPkg/Library/TdxStartupLib/TdxStartupLibNull.inf
   VmTdExitLib|UefiCpuPkg/Library/VmTdExitLibNull/VmTdExitLibNull.inf
 
 [LibraryClasses.common.SEC]

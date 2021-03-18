@@ -96,6 +96,13 @@
   INTEL:*_*_*_CC_FLAGS = /D DISABLE_NEW_DEPRECATED_INTERFACES
   GCC:*_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES
 
+  #
+  # TDX Virtual Firmware
+  #
+  MSFT:*_*_*_CC_FLAGS = /D TDX_VIRTUAL_FIRMWARE
+  INTEL:*_*_*_CC_FLAGS = /D TDX_VIRTUAL_FIRMWARE
+  GCC:*_*_*_CC_FLAGS = -D TDX_VIRTUAL_FIRMWARE
+
 !include NetworkPkg/NetworkBuildOptions.dsc.inc
 
 [BuildOptions.common.EDKII.DXE_RUNTIME_DRIVER]
@@ -277,6 +284,7 @@
   MemEncryptSevLib|OvmfPkg/Library/BaseMemEncryptSevLib/SecMemEncryptSevLib.inf
   TdvfPlatformLib|OvmfPkg/Library/TdvfPlatformLibQemu/TdvfPlatformLibQemuSec.inf
   PrePiLib|OvmfPkg/Library/PrePiLibTdx/PrePiLibTdx.inf
+  TdxStartupLib|OvmfPkg/Library/TdxStartupLib/TdxStartupLib.inf
 
 [LibraryClasses.common.PEI_CORE]
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
@@ -582,6 +590,23 @@
 !if $(TDX_IGNORE_VE_HLT) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|TRUE
 !endif
+!if $(TDX_DISABLE_SHARED_MASK) == TRUE
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxDisableSharedMask|TRUE
+!endif
+  # 32M
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageChunkSize|0x2000000
+
+  # Noexec settings for DXE.
+  # TDX doesn't allow us to change EFER so make sure these are disabled
+  gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy|0x00000000
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDxeNxMemoryProtectionPolicy|0x00000000
+  # Noexec settings for DXE.
+  # TDX doesn't allow us to change EFER so make sure these are disabled
+  #gEfiMdeModulePkgTokenSpaceGuid.PcdSetNxForStack|FALSE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUse1GPageTable|TRUE
+
+  # Set memory encryption mask
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxPteMemoryEncryptionAddressOrMask|0x0
 
   #
   # Network Pcds

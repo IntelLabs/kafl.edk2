@@ -29,8 +29,23 @@
 #include <Library/MemEncryptSevLib.h>
 #include <Register/Amd/Ghcb.h>
 #include <Register/Amd/Msr.h>
+#include <Library/TdxStartupLib.h>
+#include <Library/TdxLib.h>
 
 #include <Ppi/TemporaryRamSupport.h>
+
+#if defined (MDE_CPU_X64)
+BOOLEAN  mTdxSupported = FALSE;
+
+typedef struct _TDX_WORK_AREA{
+  UINT8 TdxIsEnabled;
+  UINT8 PageLevel5; // 5 page level is supported
+  UINT8 Rsvd[6];
+
+  UINT32 TdxInitVp;
+  UINT32 Info;
+}TDX_WORK_AREA;
+#endif
 
 #define SEC_IDT_ENTRY_COUNT  34
 
@@ -833,6 +848,137 @@ SevEsIsEnabled (
 
 VOID
 EFIAPI
+InitializeSecCoreData(
+  IN EFI_SEC_PEI_HAND_OFF             *SecCoreData,
+  IN EFI_FIRMWARE_VOLUME_HEADER       *BootFv,
+  IN VOID                             *TopOfCurrentStack
+)
+{
+  //
+  // |-------------|       <-- TopOfCurrentStack
+  // |   Stack     | 32k
+  // |-------------|
+  // |    Heap     | 32k
+  // |-------------|       <-- SecCoreData.TemporaryRamBase
+  //
+
+  ASSERT ((UINTN) (PcdGet32 (PcdOvmfSecPeiTempRamBase) +
+                   PcdGet32 (PcdOvmfSecPeiTempRamSize)) ==
+          (UINTN) TopOfCurrentStack);
+
+  //
+  // Initialize SEC hand-off state
+  //
+  SecCoreData->DataSize = sizeof(EFI_SEC_PEI_HAND_OFF);
+
+  SecCoreData->TemporaryRamSize       = (UINTN) PcdGet32 (PcdOvmfSecPeiTempRamSize);
+  SecCoreData->TemporaryRamBase       = (VOID*)((UINT8 *)TopOfCurrentStack - SecCoreData->TemporaryRamSize);
+
+  SecCoreData->PeiTemporaryRamBase    = SecCoreData->TemporaryRamBase;
+  SecCoreData->PeiTemporaryRamSize    = SecCoreData->TemporaryRamSize >> 1;
+
+  SecCoreData->StackBase              = (UINT8 *)SecCoreData->TemporaryRamBase + SecCoreData->PeiTemporaryRamSize;
+  SecCoreData->StackSize              = SecCoreData->TemporaryRamSize >> 1;
+
+  SecCoreData->BootFirmwareVolumeBase = BootFv;
+  SecCoreData->BootFirmwareVolumeSize = (UINTN) BootFv->FvLength;
+}
+
+
+#ifdef TDX_VIRTUAL_FIRMWARE
+/**
+  Determine if TDX is supported
+
+  During early booting, TDX support code will set a flag to indicate that
+  TDX is supported. Some more information are set in TDX_WORK_AREA if TDX
+  is supported.
+
+  @retval TRUE  TDX is supported
+  @retval FALSE TDX is not supported
+**/
+BOOLEAN
+CheckTdxSupported(
+  IN OUT VOID** TdInitVp,
+  IN OUT UINTN* TdInfo,
+  IN OUT UINT8* PageLevel5
+  )
+{
+  BOOLEAN       Supported;
+  TDX_WORK_AREA *TdxWorkArea;
+  UINT32        TdMailboxBase;
+
+  TdMailboxBase = FixedPcdGet32 (PcdTdMailboxBase);
+  if (TdMailboxBase == 0) {
+    return FALSE;
+  }
+  
+  TdxWorkArea = (TDX_WORK_AREA *) ((UINTN)(TdMailboxBase + 0x10));
+  Supported = (TdxWorkArea != NULL) && (TdxWorkArea->TdxIsEnabled != 0);
+
+  if (Supported) {
+    *TdInitVp = (VOID*)(UINTN)TdxWorkArea->TdxInitVp;
+    *TdInfo = (UINTN)TdxWorkArea->Info;
+    *PageLevel5 = TdxWorkArea->PageLevel5;
+  }
+
+  return Supported;
+}
+
+EFI_STATUS
+EFIAPI
+TdxInitialize (
+  IN VOID                             *Context,
+  IN EFI_FIRMWARE_VOLUME_HEADER       *BootFv,
+  IN VOID                             *TopOfCurrentStack
+  )
+{
+  EFI_SEC_PEI_HAND_OFF        *SecCoreData;
+  SEC_IDT_TABLE               IdtTableInStack;
+  IA32_DESCRIPTOR             IdtDescriptor;
+  UINT32                      Index;
+
+  SecCoreData = (EFI_SEC_PEI_HAND_OFF *)Context;
+
+  IdtTableInStack.PeiService = NULL;
+  for (Index = 0; Index < SEC_IDT_ENTRY_COUNT; Index ++) {
+    CopyMem (&IdtTableInStack.IdtTable[Index], &mIdtEntryTemplate, sizeof (mIdtEntryTemplate));
+  }
+
+  IdtDescriptor.Base  = (UINTN)&IdtTableInStack.IdtTable;
+  IdtDescriptor.Limit = (UINT16)(sizeof (IdtTableInStack.IdtTable) - 1);
+
+  AsmWriteIdtr(&IdtDescriptor);
+  InitializeCpuExceptionHandlers(NULL);
+
+  DEBUG ((DEBUG_INFO,
+    "SecCoreStartupWithStack(0x%x, 0x%x)\n",
+    (UINT32)(UINTN)BootFv,
+    (UINT32)(UINTN)TopOfCurrentStack
+    ));
+
+  //
+  // Initialize SEC hand-off state
+  //
+  InitializeSecCoreData(SecCoreData, BootFv, TopOfCurrentStack);
+
+  IoWrite8 (0x21, 0xff);
+  IoWrite8 (0xA1, 0xff);
+
+  //
+  // Initialize Local APIC Timer hardware and disable Local APIC Timer
+  // interrupts before initializing the Debug Agent and the debug timer is
+  // enabled.
+  //
+  InitializeApicTimer (0, MAX_UINT32, TRUE, 5);
+  DisableApicTimerInterrupt ();
+
+  return EFI_SUCCESS;
+}
+
+#endif
+
+VOID
+EFIAPI
 SecCoreStartupWithStack (
   IN EFI_FIRMWARE_VOLUME_HEADER       *BootFv,
   IN VOID                             *TopOfCurrentStack
@@ -843,6 +989,29 @@ SecCoreStartupWithStack (
   IA32_DESCRIPTOR             IdtDescriptor;
   UINT32                      Index;
   volatile UINT8              *Table;
+
+#ifdef TDX_VIRTUAL_FIRMWARE  
+  VOID                        *TdInitVp;
+  UINTN                       TdInfo;
+  UINT8                       PageLevel5;
+
+  //
+  // To check whether it is of Tdx Guest
+  //
+  mTdxSupported = CheckTdxSupported(&TdInitVp, &TdInfo, &PageLevel5);
+
+  if(mTdxSupported){
+
+    TdxInitialize(&SecCoreData, BootFv, TopOfCurrentStack);
+
+    DEBUG((DEBUG_INFO, "WorkArea: 0x%x, 0x%x, %d\n", TdInitVp, TdInfo, PageLevel5));
+
+    TdxStartup(&SecCoreData, TdInitVp, TdInfo, ProcessLibraryConstructorList);
+
+    ASSERT(FALSE);
+    CpuDeadLoop();
+  }
+#endif
 
   //
   // To ensure SMM can't be compromised on S3 resume, we must force re-init of
