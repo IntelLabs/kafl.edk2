@@ -38,7 +38,10 @@
   DebugLib
   MemoryAllocationLib
   UefiBootServicesTableLib
+  TdxProbeLib
+  TdxLib
 
 [Protocols]
   gEfiTcgProtocolGuid           ## SOMETIMES_CONSUMES
   gEfiTcg2ProtocolGuid          ## SOMETIMES_CONSUMES
+  gTdTcg2ProtocolGuid

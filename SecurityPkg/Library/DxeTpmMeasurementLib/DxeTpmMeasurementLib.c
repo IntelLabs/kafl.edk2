@@ -19,8 +19,9 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Guid/Acpi.h>
 #include <IndustryStandard/Acpi.h>
-
-
+#include <Protocol/Tdx.h>
+#include <Library/TdxLib.h>
+#include <Library/TdxProbeLib.h>
 
 /**
   Tpm12 measure and log data, and extend the measurement result into a specific PCR.
@@ -150,6 +151,68 @@ Tpm20MeasureAndLogData (
 }
 
 /**
+  Tdx measure and log data, and extend the measurement result into a
+  specific TDX RTMR.
+
+  @param[in]  Index            RTMR Index.
+  @param[in]  EventType        Event type.
+  @param[in]  EventLog         Measurement event log.
+  @param[in]  LogLen           Event log length in bytes.
+  @param[in]  HashData         The start of the data buffer to be hashed, extended.
+  @param[in]  HashDataLen      The length, in bytes, of the buffer referenced by HashData
+
+  @retval EFI_SUCCESS           Operation completed successfully.
+  @retval EFI_UNSUPPORTED       Tdx device not available.
+  @retval EFI_OUT_OF_RESOURCES  Out of memory.
+  @retval EFI_DEVICE_ERROR      The operation was unsuccessful.
+**/
+EFI_STATUS
+EFIAPI
+TdxMeasureAndLogData (
+  IN UINT32             Index,
+  IN UINT32             EventType,
+  IN VOID               *EventLog,
+  IN UINT32             LogLen,
+  IN VOID               *HashData,
+  IN UINT64             HashDataLen
+  )
+{
+  EFI_STATUS                Status;
+  EFI_TCG2_PROTOCOL         *Tcg2Protocol;
+  EFI_TCG2_EVENT            *Tcg2Event;
+
+  DEBUG ((DEBUG_INFO, "TdxMeasureAndLogData\n"));
+  Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) &Tcg2Protocol);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Tcg2Event = (EFI_TCG2_EVENT *) AllocateZeroPool (LogLen + sizeof (EFI_TCG2_EVENT));
+  if(Tcg2Event == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Tcg2Event->Size = (UINT32) LogLen + sizeof (EFI_TCG2_EVENT) - sizeof (Tcg2Event->Event);
+  Tcg2Event->Header.HeaderSize  = sizeof (EFI_TCG2_EVENT_HEADER);
+  Tcg2Event->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
+  Tcg2Event->Header.PCRIndex      = Index;
+  Tcg2Event->Header.EventType     = EventType;
+  CopyMem (&Tcg2Event->Event[0], EventLog, LogLen);
+
+  Status = Tcg2Protocol->HashLogExtendEvent (
+                           Tcg2Protocol,
+                           0,
+                           (EFI_PHYSICAL_ADDRESS) (UINTN) HashData,
+                           HashDataLen,
+                           Tcg2Event
+                           );
+  FreePool (Tcg2Event);
+
+  return Status;
+}
+
+
+/**
   Tpm measure and log data, and extend the measurement result into a specific PCR.
 
   @param[in]  PcrIndex         PCR Index.
@@ -176,6 +239,20 @@ TpmMeasureAndLogData (
   )
 {
   EFI_STATUS  Status;
+
+  //
+  // Try to measure using TDX protocol
+  //
+  if (ProbeTdGuest()) {
+    return TdxMeasureAndLogData (
+             PcrIndex,
+             EventType,
+             EventLog,
+             LogLen,
+             HashData,
+             HashDataLen
+             );
+  }
 
   //
   // Try to measure using Tpm20 protocol
