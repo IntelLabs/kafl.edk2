@@ -55,12 +55,14 @@
   BaseLib
   SecurityManagementLib
   HobLib
+  TdxProbeLib
 
 [Guids]
   gMeasuredFvHobGuid                    ## SOMETIMES_CONSUMES ## HOB
 
 [Protocols]
   gEfiTcg2ProtocolGuid                  ## SOMETIMES_CONSUMES
+  gTdTcg2ProtocolGuid
   gEfiFirmwareVolumeBlockProtocolGuid   ## SOMETIMES_CONSUMES
   gEfiBlockIoProtocolGuid               ## SOMETIMES_CONSUMES
   gEfiDiskIoProtocolGuid                ## SOMETIMES_CONSUMES

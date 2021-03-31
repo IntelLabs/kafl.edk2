@@ -41,6 +41,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PeCoffLib.h>
 #include <Library/SecurityManagementLib.h>
 #include <Library/HobLib.h>
+#include <Library/TdxProbeLib.h>
 
 //
 // Flag to check GPT partition. It only need be measured once.
@@ -374,6 +375,51 @@ Finish:
   return Status;
 }
 
+EFI_STATUS
+EFIAPI
+GetTcg2Protocol (
+  EFI_TCG2_PROTOCOL   **Tcg2Protocol
+  )
+{
+  EFI_STATUS                          Status;
+  EFI_TCG2_BOOT_SERVICE_CAPABILITY    ProtocolCapability;
+
+  if (ProbeTdGuest()) {
+    Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) Tcg2Protocol);
+    if (EFI_ERROR (Status)) {
+      //
+      // TdTcg2 protocol is not installed.
+      //
+      DEBUG ((EFI_D_VERBOSE, "DxeTpm2MeasureBootHandler - TdTcg2 - %r\n", Status));
+      return EFI_UNSUPPORTED;
+    }
+  } else {
+    Status = gBS->LocateProtocol (&gEfiTcg2ProtocolGuid, NULL, (VOID **) Tcg2Protocol);
+    if (EFI_ERROR (Status)) {
+      //
+      // Tcg2 protocol is not installed. So, TPM2 is not present.
+      //
+      DEBUG ((EFI_D_VERBOSE, "DxeTpm2MeasureBootHandler - Tcg2 - %r\n", Status));
+      return EFI_UNSUPPORTED;
+    }
+
+    ProtocolCapability.Size = (UINT8) sizeof (ProtocolCapability);
+    Status = (*Tcg2Protocol)->GetCapability (
+                             *Tcg2Protocol,
+                             &ProtocolCapability
+                             );
+    if (EFI_ERROR (Status) || (!ProtocolCapability.TPMPresentFlag)) {
+      //
+      // TPM device doesn't work or activate.
+      //
+      DEBUG ((EFI_D_ERROR, "DxeTpm2MeasureBootHandler (%r) - TPMPresentFlag - %x\n", Status, ProtocolCapability.TPMPresentFlag));
+      return EFI_UNSUPPORTED;
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
 /**
   The security handler is used to abstract platform-specific policy
   from the DXE core response to an attempt to use a file that returns a
@@ -424,7 +470,7 @@ DxeTpm2MeasureBootHandler (
 {
   EFI_TCG2_PROTOCOL                   *Tcg2Protocol;
   EFI_STATUS                          Status;
-  EFI_TCG2_BOOT_SERVICE_CAPABILITY    ProtocolCapability;
+  //EFI_TCG2_BOOT_SERVICE_CAPABILITY    ProtocolCapability;
   EFI_DEVICE_PATH_PROTOCOL            *DevicePathNode;
   EFI_DEVICE_PATH_PROTOCOL            *OrigDevicePathNode;
   EFI_HANDLE                          Handle;
@@ -435,26 +481,10 @@ DxeTpm2MeasureBootHandler (
   EFI_PHYSICAL_ADDRESS                FvAddress;
   UINT32                              Index;
 
-  Status = gBS->LocateProtocol (&gEfiTcg2ProtocolGuid, NULL, (VOID **) &Tcg2Protocol);
+  Tcg2Protocol = NULL;
+  Status = GetTcg2Protocol(&Tcg2Protocol);
+  DEBUG ((DEBUG_INFO, "Tcg2Protocol=%p, Status=%r\n", Tcg2Protocol, Status));
   if (EFI_ERROR (Status)) {
-    //
-    // Tcg2 protocol is not installed. So, TPM2 is not present.
-    // Don't do any measurement, and directly return EFI_SUCCESS.
-    //
-    DEBUG ((EFI_D_VERBOSE, "DxeTpm2MeasureBootHandler - Tcg2 - %r\n", Status));
-    return EFI_SUCCESS;
-  }
-
-  ProtocolCapability.Size = (UINT8) sizeof (ProtocolCapability);
-  Status = Tcg2Protocol->GetCapability (
-                           Tcg2Protocol,
-                           &ProtocolCapability
-                           );
-  if (EFI_ERROR (Status) || (!ProtocolCapability.TPMPresentFlag)) {
-    //
-    // TPM device doesn't work or activate.
-    //
-    DEBUG ((EFI_D_ERROR, "DxeTpm2MeasureBootHandler (%r) - TPMPresentFlag - %x\n", Status, ProtocolCapability.TPMPresentFlag));
     return EFI_SUCCESS;
   }
 
