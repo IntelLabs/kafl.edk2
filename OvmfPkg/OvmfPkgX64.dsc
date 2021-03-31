@@ -40,6 +40,7 @@
   #
   DEFINE TDX_IGNORE_VE_HLT       = FALSE
   DEFINE TDX_EMULATION_ENABLE    = FALSE
+
   # Network definition
   #
   DEFINE NETWORK_TLS_ENABLE             = FALSE
@@ -1072,6 +1073,17 @@
       NULL|MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
   }
 !endif
+
+  #
+  # EFI TD PROTOCOL
+  #
+  OvmfPkg/Tcg/Tcg2Dxe/TdTcg2Dxe.inf {
+    <LibraryClasses>
+      #TdxLib|MdePkg/Library/TdxLib/TdxLib.inf
+      HashLib|OvmfPkg/Library/HashLibBaseCryptoRouterTdx/HashLibBaseCryptoRouterDxe.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
+  }
+
 
   #
   # TPM support

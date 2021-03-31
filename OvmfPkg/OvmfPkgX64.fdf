@@ -401,6 +401,11 @@ INF  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
 !endif
 
 #
+# TDX support
+#
+INF OvmfPkg/Tcg/Tcg2Dxe/TdTcg2Dxe.inf
+
+#
 # TPM support
 #
 !if $(TPM_ENABLE) == TRUE
