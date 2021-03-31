@@ -29,18 +29,18 @@
   # Defines for default states.  These can be changed on the command line.
   # -D FLAG=VALUE
   #
-  DEFINE SECURE_BOOT_ENABLE      = FALSE
+  DEFINE SECURE_BOOT_ENABLE      = TRUE
   DEFINE SMM_REQUIRE             = FALSE
   DEFINE SOURCE_DEBUG_ENABLE     = FALSE
-  DEFINE TPM_ENABLE              = FALSE
-  DEFINE TPM_CONFIG_ENABLE       = FALSE
+  DEFINE TPM_ENABLE              = TRUE
+  DEFINE TPM_CONFIG_ENABLE       = TRUE
 
   #
   # TDX flags
   #
   DEFINE TDX_IGNORE_VE_HLT       = FALSE
   DEFINE TDX_EMULATION_ENABLE    = FALSE
-
+  DEFINE TDX_SUPPORT             = TRUE
   # Network definition
   #
   DEFINE NETWORK_TLS_ENABLE             = FALSE
@@ -247,9 +247,15 @@
   Tpm2CommandLib|SecurityPkg/Library/Tpm2CommandLib/Tpm2CommandLib.inf
   Tcg2PhysicalPresenceLib|OvmfPkg/Library/Tcg2PhysicalPresenceLibQemu/DxeTcg2PhysicalPresenceLib.inf
   Tcg2PpVendorLib|SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
-  TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
+  #TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
 !else
   Tcg2PhysicalPresenceLib|OvmfPkg/Library/Tcg2PhysicalPresenceLibNull/DxeTcg2PhysicalPresenceLib.inf
+  #TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
+!endif
+
+!if $(TPM_ENABLE) == TRUE or $(TDX_SUPPORT) == TRUE
+  TpmMeasurementLib|SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
+!else
   TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
 !endif
 
@@ -707,6 +713,7 @@
   gEfiNetworkPkgTokenSpaceGuid.PcdIPv4PXESupport|0x01
   gEfiNetworkPkgTokenSpaceGuid.PcdIPv6PXESupport|0x01
 
+
 [PcdsDynamicHii]
 !if $(TPM_ENABLE) == TRUE && $(TPM_CONFIG_ENABLE) == TRUE
   gEfiSecurityPkgTokenSpaceGuid.PcdTcgPhysicalPresenceInterfaceVer|L"TCG2_VERSION"|gTcg2ConfigFormSetGuid|0x0|"1.3"|NV,BS
@@ -800,6 +807,9 @@
 !endif
 !if $(TPM_ENABLE) == TRUE
       NULL|SecurityPkg/Library/DxeTpmMeasureBootLib/DxeTpmMeasureBootLib.inf
+      #NULL|SecurityPkg/Library/DxeTpm2MeasureBootLib/DxeTpm2MeasureBootLib.inf
+!endif
+!if $(TPM_ENABLE) == TRUE OR $(TDX_SUPPORT) == TRUE
       NULL|SecurityPkg/Library/DxeTpm2MeasureBootLib/DxeTpm2MeasureBootLib.inf
 !endif
   }
