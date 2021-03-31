@@ -44,6 +44,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/PerformanceLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
+#include <Library/TdxProbeLib.h>
 
 #define PERF_ID_TCG2_DXE  0x3120
 
@@ -2636,6 +2637,10 @@ DriverEntry (
   EFI_TCG2_EVENT_ALGORITHM_BITMAP   TpmHashAlgorithmBitmap;
   UINT32                            ActivePCRBanks;
   UINT32                            NumberOfPCRBanks;
+
+  if (ProbeTdGuest()) {
+    return EFI_UNSUPPORTED;
+  }
 
   mImageHandle = ImageHandle;
 
