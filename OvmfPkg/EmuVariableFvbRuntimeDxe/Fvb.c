@@ -26,6 +26,7 @@
 #include <Library/DevicePathLib.h>
 #include <Library/PcdLib.h>
 #include <Library/PlatformFvbLib.h>
+#include <Library/TdxProbeLib.h>
 #include "Fvb.h"
 
 #define EFI_AUTHENTICATED_VARIABLE_GUID \
@@ -597,6 +598,154 @@ ValidateFvHeader (
 
 
 /**
+  Check padding data all bit should be 1.
+
+  @param[in] Buffer     - A pointer to buffer header
+  @param[in] BufferSize - Buffer size
+
+  @retval  TRUE   - The padding data is valid.
+  @retval  TRUE  - The padding data is invalid.
+
+**/
+BOOLEAN
+CheckPaddingData (
+  IN UINT8    *Buffer,
+  IN UINT32    BufferSize
+  )
+ {
+   UINT32 index;
+
+   for (index = 0; index < BufferSize; index++) {
+     if (Buffer[index] != 0xFF) {
+       return FALSE;
+     }
+   }
+
+   return TRUE;
+ }
+
+
+/**
+  Check the integrity of CFV data.
+
+  @param[in] TdxCfvBase - A pointer to CFV header
+  @param[in] TdxCfvSize - CFV data size
+
+  @retval  TRUE   - The CFV data is valid.
+  @retval  FALSE  - The CFV data is invalid.
+
+**/
+BOOLEAN
+ValidateTdxCfv (
+  IN UINT8    *TdxCfvBase,
+  IN UINT32    TdxCfvSize
+  )
+{
+  UINT16                         Checksum;
+  UINTN                          VariableBase;
+  UINT32                         VariableOffset;
+  UINT32                         VariableOffsetBeforeAlign;
+  EFI_FIRMWARE_VOLUME_HEADER     *CfvFvHeader;
+  VARIABLE_STORE_HEADER          *CfvVariableStoreHeader;
+  AUTHENTICATED_VARIABLE_HEADER  *VariableHeader;
+
+  static EFI_GUID FvHdrGUID = EFI_SYSTEM_NV_DATA_FV_GUID;
+  static EFI_GUID VarStoreHdrGUID = EFI_AUTHENTICATED_VARIABLE_GUID;
+
+  VariableOffset = 0;
+
+  if (TdxCfvBase == NULL) {
+    DEBUG ((DEBUG_ERROR, "TDX CFV: CFV pointer is NULL\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header zerovetor, filesystemguid,
+  // revision, signature, attributes, fvlength, checksum
+  // HeaderLength cannot be an odd number
+  //
+  CfvFvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) TdxCfvBase;
+
+  if ((!IsZeroBuffer (CfvFvHeader->ZeroVector, 16)) ||
+      (!CompareGuid (&FvHdrGUID, &CfvFvHeader->FileSystemGuid)) ||
+      (CfvFvHeader->Signature != EFI_FVH_SIGNATURE) ||
+      (CfvFvHeader->Attributes != 0x4feff) ||
+      (CfvFvHeader->HeaderLength != EMU_FV_HEADER_LENGTH) ||
+      (CfvFvHeader->Revision != EFI_FVH_REVISION)
+      ) {
+    DEBUG ((DEBUG_ERROR, "TDX CFV: Basic FV headers were invalid\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header checksum
+  //
+  Checksum = CalculateSum16 ((VOID*) CfvFvHeader, CfvFvHeader->HeaderLength);
+
+  if (Checksum != 0) {
+    DEBUG ((DEBUG_ERROR, "TDX CFV: FV checksum was invalid\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header signature, size, format, state
+  //
+  CfvVariableStoreHeader = (VARIABLE_STORE_HEADER *) (TdxCfvBase + CfvFvHeader->HeaderLength);
+  if ((!CompareGuid (&VarStoreHdrGUID, &CfvVariableStoreHeader->Signature)) ||
+      (CfvVariableStoreHeader->Format != VARIABLE_STORE_FORMATTED) ||
+      (CfvVariableStoreHeader->State != VARIABLE_STORE_HEALTHY)
+      ) {
+    DEBUG ((DEBUG_ERROR, "TDX CFV: Variable Store header was invalid\n"));
+    return FALSE;
+  }
+
+  //
+  // Verify the header startId, state
+  // Verify data to the end
+  //
+  VariableBase = (UINTN)TdxCfvBase + CfvFvHeader->HeaderLength + sizeof (VARIABLE_STORE_HEADER);
+  while (VariableOffset  < (CfvVariableStoreHeader->Size - sizeof (VARIABLE_STORE_HEADER))) {
+    VariableHeader = (AUTHENTICATED_VARIABLE_HEADER *) (VariableBase + VariableOffset);
+    if (VariableHeader->StartId != VARIABLE_DATA) {
+      if (!CheckPaddingData ((UINT8 *)VariableHeader, CfvVariableStoreHeader->Size - sizeof(VARIABLE_STORE_HEADER) - VariableOffset)) {
+        DEBUG ((DEBUG_ERROR, "TDX CFV: Variable header was invalid\n"));
+        return FALSE;
+      }
+      VariableOffset = CfvVariableStoreHeader->Size - sizeof(VARIABLE_STORE_HEADER);
+    }
+    else {
+      if (!((VariableHeader->State == VAR_IN_DELETED_TRANSITION) ||
+          (VariableHeader->State == VAR_DELETED) ||
+          (VariableHeader->State == VAR_HEADER_VALID_ONLY) ||
+          (VariableHeader->State == VAR_ADDED))) {
+        DEBUG ((DEBUG_ERROR, "TDX CFV: Variable header was invalid\n"));
+        return FALSE;
+      }
+
+      VariableOffset += sizeof (AUTHENTICATED_VARIABLE_HEADER) + VariableHeader->NameSize + VariableHeader->DataSize;
+      // Verify VariableOffset should be less than or equal CfvVariableStoreHeader->Size - sizeof(VARIABLE_STORE_HEADER)
+      if (VariableOffset > (CfvVariableStoreHeader->Size - sizeof(VARIABLE_STORE_HEADER))) {
+        DEBUG ((DEBUG_ERROR, "TDX CFV: Variable header was invalid\n"));
+        return FALSE;
+      }
+
+      VariableOffsetBeforeAlign = VariableOffset;
+      // 4 byte align
+      VariableOffset  = (VariableOffset  + 3) & (UINTN)(~3);
+
+      if (!CheckPaddingData ((UINT8 *)(VariableBase + VariableOffsetBeforeAlign), VariableOffset - VariableOffsetBeforeAlign)) {
+        DEBUG ((DEBUG_ERROR, "TDX CFV: Variable header was invalid\n"));
+        return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+
+}
+
+
+/**
   Initializes the FV Header and Variable Store Header
   to support variable operations.
 
@@ -718,6 +867,8 @@ FvbInitialize (
   EFI_HANDLE                          Handle;
   EFI_PHYSICAL_ADDRESS                Address;
   RETURN_STATUS                       PcdStatus;
+  UINT8                               *CfvBase;
+  UINT32                              CfvSize;
 
   DEBUG ((DEBUG_INFO, "EMU Variable FVB Started\n"));
 
@@ -770,7 +921,21 @@ FvbInitialize (
   mEmuVarsFvb.BufferPtr = Ptr;
 
   //
-  // Initialize the main FV header and variable store header
+  // Copy the content from Configuration FV in Td guest
+  //
+  if (ProbeTdGuest()) {
+    CfvBase = (UINT8*)(UINTN)PcdGet32(PcdCfvBase);
+    CfvSize = (UINT32)PcdGet32(PcdCfvRawDataSize);
+    DEBUG ((DEBUG_INFO, "Copy the content from Configuration FV. 0x%p : 0x%x\n", CfvBase, CfvSize));
+
+    if (ValidateTdxCfv(CfvBase, CfvSize)) {
+      CopyMem(Ptr, CfvBase, CfvSize);
+      Initialize = FALSE;
+    }
+  }
+
+  //
+  // Initialize the main FV header and variable store header.
   //
   if (Initialize) {
     SetMem (Ptr, EMU_FVB_SIZE, ERASED_UINT8);
