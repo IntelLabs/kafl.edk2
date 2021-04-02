@@ -52,7 +52,6 @@
   LocalApicLib
   CpuExceptionHandlerLib
   TdxStartupLib
-  TdxLib
 
 [Ppis]
   gEfiTemporaryRamSupportPpiGuid                # PPI ALWAYS_PRODUCED

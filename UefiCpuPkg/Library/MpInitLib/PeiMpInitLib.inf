@@ -54,7 +54,6 @@
   PcdLib
   VmgExitLib
   TdxProbeLib
-  TdxLib
 
 [Pcd]
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber        ## CONSUMES

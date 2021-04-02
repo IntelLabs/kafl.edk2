@@ -55,7 +55,6 @@
   PcdLib
   VmgExitLib
   TdxProbeLib
-  TdxLib
 
 [Protocols]
   gEfiTimerArchProtocolGuid                     ## SOMETIMES_CONSUMES
