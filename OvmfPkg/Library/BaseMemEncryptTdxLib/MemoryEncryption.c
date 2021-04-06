@@ -27,8 +27,6 @@ typedef enum {
    ClearSharedBit
 } TDX_PAGETABLE_MODE;
 
-STATIC BOOLEAN mAddressEncMaskChecked = FALSE;
-STATIC UINT64  mAddressEncMask;
 STATIC PAGE_TABLE_POOL   *mPageTablePool = NULL;
 
 /**
@@ -63,21 +61,7 @@ GetMemEncryptionAddressMask (
   VOID
   )
 {
-  if (mAddressEncMaskChecked) {
-    return mAddressEncMask;
-  }
-
-  mAddressEncMask = PcdGet64(PcdTdxSharedPageMask);
-
-  mAddressEncMaskChecked = TRUE;
-  DEBUG ((
-    DEBUG_INFO,
-    "%a:%a: AddressEncMask=0x%Lx\n",
-    gEfiCallerBaseName,
-    __FUNCTION__,
-    mAddressEncMask));
-
-  return mAddressEncMask;
+  return TdSharedPageMask();
 }
 
 /**
@@ -532,9 +516,6 @@ SetOrClearSharedBit(
   }
 
   Status = TdVmCall(TDVMCALL_MAPGPA, PhysicalAddress, Length, 0, 0, NULL);
-  if (PcdGetBool(PcdTdxDisableSharedMask) != TRUE) {
-    ASSERT(Status == 0);
-  }
 
   //
   // If changing shared to private, must accept-page again

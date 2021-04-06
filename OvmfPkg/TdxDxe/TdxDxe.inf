@@ -51,7 +51,5 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdPciMmio64Size
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
   gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxSharedPageMask
   gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxDisableSharedMask
   gUefiOvmfPkgTokenSpaceGuid.PcdTdRelocatedMailboxBase

@@ -123,7 +123,6 @@ TdxDxeEntryPoint (
   EFI_HOB_PLATFORM_INFO         *PlatformInfo = NULL;
   EFI_HOB_GUID_TYPE             *GuidHob;
   UINT32                        CpuMaxLogicalProcessorNumber;
-  EFI_HOB_CPU *                 CpuHob;
   TD_RETURN_DATA                TdReturnData;
 
   GuidHob = GetFirstGuidHob(&gUefiOvmfPkgTdxPlatformGuid);
@@ -182,16 +181,6 @@ TdxDxeEntryPoint (
     // After DXE, will update address before exiting
     //
     PcdStatus = PcdSet64S (PcdTdRelocatedMailboxBase, PlatformInfo->RelocatedMailBox);
-    ASSERT_RETURN_ERROR(PcdStatus);
-  }
-
-  if (PcdGetBool(PcdTdxDisableSharedMask) == TRUE) {
-    PcdStatus = PcdSet64S (PcdTdxSharedPageMask, 0);
-    ASSERT_RETURN_ERROR(PcdStatus);
-  } else {
-    CpuHob = GetFirstHob (EFI_HOB_TYPE_CPU);
-    ASSERT (CpuHob != NULL);
-    PcdStatus = PcdSet64S (PcdTdxSharedPageMask, (1ULL << (CpuHob->SizeOfMemorySpace - 1)));
     ASSERT_RETURN_ERROR(PcdStatus);
   }
 

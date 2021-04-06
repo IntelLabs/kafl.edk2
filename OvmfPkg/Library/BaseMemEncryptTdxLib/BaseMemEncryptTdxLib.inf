@@ -44,6 +44,3 @@
   TdxLib
   TdxProbeLib
 
-[Pcd]
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxSharedPageMask
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxDisableSharedMask

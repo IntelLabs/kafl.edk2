@@ -604,9 +604,6 @@
 !if $(TDX_IGNORE_VE_HLT) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|TRUE
 !endif
-!if $(TDX_DISABLE_SHARED_MASK) == TRUE
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxDisableSharedMask|TRUE
-!endif
   # 32M
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageChunkSize|0x2000000
 

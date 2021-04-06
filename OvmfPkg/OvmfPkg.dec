@@ -339,7 +339,6 @@
 
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfImageSizeInKb|0|UINT32|0x58
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageChunkSize|0x2000|UINT64|0x59
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxDisableSharedMask|FALSE|BOOLEAN|0x5a
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxSetNxForStack|FALSE|BOOLEAN|0x5b
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxPteMemoryEncryptionAddressOrMask|0|UINT64|0x5c
 
@@ -379,7 +378,6 @@
   #  This PCD is only accessed if PcdSmmSmramRequire is TRUE (see below).
   gUefiOvmfPkgTokenSpaceGuid.PcdQ35SmramAtDefaultSmbase|FALSE|BOOLEAN|0x34
 
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxSharedPageMask|0x0|UINT64|0x101
   gUefiOvmfPkgTokenSpaceGuid.PcdTdRelocatedMailboxBase|0|UINT64|0x102
 
   ## This PCD records LAML field in TDX EVENTLOG ACPI table.
