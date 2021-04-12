@@ -69,14 +69,13 @@
     BYTE              sha384[SHA384_DIGEST_SIZE];
   } TDX_DIGEST_VALUE;
 
-#pragma pack()
-
   typedef struct {
     UINT32            Signature;
     UINT8             *HashData;
     UINTN             HashDataLen;
   } TDX_EVENT;
 
+#pragma pack()
 
 #define LOOPIT(X) do { \
   volatile int foo = (X); \

@@ -80,27 +80,24 @@ PCR_TDX_EXTEND_MAP mPcrTdxExtendMaps[PCR_COUNT] = {
   {15, REG_TYPE_RTMR, 2,    3},
 };
 
-
 #define PERF_ID_TD_TCG2_DXE  0x3130
+// TODO TDX command/response size
+#define   TCG2_DEFAULT_MAX_COMMAND_SIZE         0x1000
+#define   TCG2_DEFAULT_MAX_RESPONSE_SIZE        0x1000
+#define   HANDOFF_TABLE_DESC                    "TdxTable"
+#define   TCG_EVENT_LOG_AREA_COUNT_MAX          1
+
+#pragma pack(1)
+
 typedef struct {
   CHAR16                                 *VariableName;
   EFI_GUID                               *VendorGuid;
 } VARIABLE_TYPE;
 
-// TODO TDX command/response size
-#define  TCG2_DEFAULT_MAX_COMMAND_SIZE        0x1000
-#define  TCG2_DEFAULT_MAX_RESPONSE_SIZE       0x1000
-
 typedef struct {
   EFI_GUID               *EventGuid;
   EFI_TCG2_EVENT_LOG_FORMAT  LogFormat;
 } TCG2_EVENT_INFO_STRUCT;
-
-TCG2_EVENT_INFO_STRUCT mTcg2EventInfo[] = {
-  {&gTcgEvent2EntryHobGuid,            EFI_TCG2_EVENT_LOG_FORMAT_TCG_2},
-};
-
-#define TCG_EVENT_LOG_AREA_COUNT_MAX   1
 
 typedef struct {
   EFI_TCG2_EVENT_LOG_FORMAT         EventLogFormat;
@@ -113,26 +110,24 @@ typedef struct {
   UINTN                             Next800155EventOffset;
 } TCG_EVENT_LOG_AREA_STRUCT;
 
-#define HANDOFF_TABLE_DESC  "TdxTable"
-  typedef struct {
-    UINT8                             TableDescriptionSize;
-    UINT8                             TableDescription[sizeof(HANDOFF_TABLE_DESC)];
-    UINT64                            NumberOfTables;
-    EFI_CONFIGURATION_TABLE           TableEntry[1];
-  } TDX_HANDOFF_TABLE_POINTERS2;
+typedef struct {
+  UINT8                             TableDescriptionSize;
+  UINT8                             TableDescription[sizeof(HANDOFF_TABLE_DESC)];
+  UINT64                            NumberOfTables;
+  EFI_CONFIGURATION_TABLE           TableEntry[1];
+} TDX_HANDOFF_TABLE_POINTERS2;
 
-  typedef struct {
-    UINT32            count;
-    TPMI_ALG_HASH     hashAlg;
-    BYTE              sha384[SHA384_DIGEST_SIZE];
-  } TDX_DIGEST_VALUE;
-  
-  typedef struct {
-    UINT32            Signature;
-    UINT8             *HashData;
-    UINTN             HashDataLen;
-  } TDX_EVENT;
+typedef struct {
+  UINT32            count;
+  TPMI_ALG_HASH     hashAlg;
+  BYTE              sha384[SHA384_DIGEST_SIZE];
+} TDX_DIGEST_VALUE;
 
+typedef struct {
+  UINT32            Signature;
+  UINT8             *HashData;
+  UINTN             HashDataLen;
+} TDX_EVENT;
 
 typedef struct _TCG_DXE_DATA {
   EFI_TCG2_BOOT_SERVICE_CAPABILITY  BsCap;
@@ -141,6 +136,18 @@ typedef struct _TCG_DXE_DATA {
   TCG_EVENT_LOG_AREA_STRUCT         FinalEventLogAreaStruct[TCG_EVENT_LOG_AREA_COUNT_MAX];
   EFI_TCG2_FINAL_EVENTS_TABLE       *FinalEventsTable[TCG_EVENT_LOG_AREA_COUNT_MAX];
 } TCG_DXE_DATA;
+
+typedef struct{
+  TPMI_ALG_HASH   HashAlgo;
+  UINT16          HashSize;
+  UINT32          HashMask;
+}TDX_HASH_INFO;
+
+#pragma pack()
+
+TCG2_EVENT_INFO_STRUCT mTcg2EventInfo[] = {
+  {&gTcgEvent2EntryHobGuid,            EFI_TCG2_EVENT_LOG_FORMAT_TCG_2},
+};
 
 TCG_DXE_DATA                 mTcgDxeData = {
   {
@@ -183,12 +190,6 @@ EFI_TDX_EVENTLOG_ACPI_TABLE mTdxEventlogAcpiTemplate = {
   0,  // laml
   0,  // lasa
 };
-
-typedef struct{
-  TPMI_ALG_HASH   HashAlgo;
-  UINT16          HashSize;
-  UINT32          HashMask;
-}TDX_HASH_INFO;
 
 static TDX_HASH_INFO mHashInfo[] = {
   {TPM_ALG_SHA384, SHA384_DIGEST_SIZE, HASH_ALG_SHA384}
@@ -521,41 +522,6 @@ Tcg2GetCapability (
 {
   DEBUG ((DEBUG_INFO, "TdTcg2GetCapability\n"));
   return EFI_SUCCESS;
-/*
-  DEBUG ((DEBUG_VERBOSE, "TDVF>>>> Tcg2GetCapability ...\n"));
-
-  if ((This == NULL) || (ProtocolCapability == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  DEBUG ((DEBUG_VERBOSE, "Size - 0x%x\n", ProtocolCapability->Size));
-  DEBUG ((DEBUG_VERBOSE, " 1.1 - 0x%x, 1.0 - 0x%x\n", sizeof(EFI_TCG2_BOOT_SERVICE_CAPABILITY), sizeof(TREE_BOOT_SERVICE_CAPABILITY_1_0)));
-
-  if (ProtocolCapability->Size < mTcgDxeData.BsCap.Size) {
-    //
-    // Handle the case that firmware support 1.1 but OS only support 1.0.
-    //
-    if ((mTcgDxeData.BsCap.ProtocolVersion.Major > 0x01) ||
-        ((mTcgDxeData.BsCap.ProtocolVersion.Major == 0x01) && ((mTcgDxeData.BsCap.ProtocolVersion.Minor > 0x00)))) {
-      if (ProtocolCapability->Size >= sizeof(TREE_BOOT_SERVICE_CAPABILITY_1_0)) {
-        CopyMem (ProtocolCapability, &mTcgDxeData.BsCap, sizeof(TREE_BOOT_SERVICE_CAPABILITY_1_0));
-        ProtocolCapability->Size = sizeof(TREE_BOOT_SERVICE_CAPABILITY_1_0);
-        ProtocolCapability->StructureVersion.Major = 1;
-        ProtocolCapability->StructureVersion.Minor = 0;
-        ProtocolCapability->ProtocolVersion.Major = 1;
-        ProtocolCapability->ProtocolVersion.Minor = 0;
-        DEBUG ((EFI_D_ERROR, "TreeGetCapability (Compatible) - %r\n", EFI_SUCCESS));
-        return EFI_SUCCESS;
-      }
-    }
-    ProtocolCapability->Size = mTcgDxeData.BsCap.Size;
-    return EFI_BUFFER_TOO_SMALL;
-  }
-
-  CopyMem (ProtocolCapability, &mTcgDxeData.BsCap, mTcgDxeData.BsCap.Size);
-  DEBUG ((DEBUG_VERBOSE, "Tcg2GetCapability - %r\n", EFI_SUCCESS));
-  return EFI_SUCCESS;
-*/ 
 }
 
 /**
@@ -1469,29 +1435,6 @@ Tcg2SubmitCommand (
   )
 {
   return EFI_UNSUPPORTED;
-/*
-  TDX_COMMANDS    *TdCmd;
-  EFI_STATUS      Status;
-
-  DEBUG ((EFI_D_INFO, "Tcg2SubmitCommand ...\n"));
-
-  TdCmd = (TDX_COMMANDS*)InputParameterBlock;
-  if(TdCmd->command != TDX_CMD_EXTEND_RTMR || TdCmd->command != TDX_CMD_TDREPORT){
-    ASSERT(FALSE);
-    DEBUG((EFI_D_ERROR, "Unsupported Tdx commands - %d\n", TdCmd->command));
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if(TdCmd->command == TDX_CMD_EXTEND_RTMR){
-    Status = ExtendTdRtmr((UINT32*)TdCmd->params.extend_params.hash, SHA384_DIGEST_SIZE, TdCmd->params.extend_params.index);
-  }else if(TdCmd->command == TDX_CMD_TDREPORT){
-    Status = DoTdReport(OutputParameterBlock, OutputParameterBlockSize,
-                        TdCmd->params.tdreport_params.additional_data,
-                        TdCmd->params.tdreport_params.size);
-  }
-
-  return Status;
-*/  
 }
 
 /**
@@ -1614,7 +1557,6 @@ SetupEventLog (
   TDX_EVENT                       *TdxEvent;
   TCG_PCR_EVENT2                  *TcgPcrEvent2;
   TPML_DIGEST_VALUES              DigestList;
-  UINTN I = 0;
 
   DEBUG ((EFI_D_INFO, "SetupEventLog\n"));
 
@@ -1805,10 +1747,6 @@ SetupEventLog (
         //   UINTN  HashDataLen;
         // }TDX_EVENT
 
-//      if (I == 1) {
-//        break;
-//      }
-        I++;
         TcgEvent = AllocateCopyPool (GET_GUID_HOB_DATA_SIZE (GuidHob.Guid), GET_GUID_HOB_DATA (GuidHob.Guid));
         DEBUG((DEBUG_INFO, "GuidHob size = 0x%x\n", GET_GUID_HOB_DATA_SIZE (GuidHob.Guid)));
         ASSERT (TcgEvent != NULL);
