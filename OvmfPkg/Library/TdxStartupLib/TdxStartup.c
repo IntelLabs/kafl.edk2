@@ -103,6 +103,7 @@ TdxStartup(
   UINT32                      DxeCodeBase;
   UINT32                      DxeCodeSize;
   TD_RETURN_DATA              TdReturnData;
+  UINT8                       *PlatformInfoPtr;
 
   Status = EFI_SUCCESS;
   BootFv = NULL;
@@ -224,7 +225,8 @@ TdxStartup(
 
   MeasureConfigurationVolume ((UINT64)(UINTN)PcdGet32 (PcdCfvBase));
 
-  BuildGuidDataHob (&gUefiOvmfPkgTdxPlatformGuid, &PlatformInfoHob, sizeof (EFI_HOB_PLATFORM_INFO));
+  PlatformInfoPtr = (UINT8*)BuildGuidDataHob (&gUefiOvmfPkgTdxPlatformGuid, &PlatformInfoHob, sizeof (EFI_HOB_PLATFORM_INFO));
+  MeasureQemuCfgSystemSts (1, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 6, 6);
 
   BuildStackHob ((UINTN)SecCoreData->StackBase, SecCoreData->StackSize <<=1 );
 

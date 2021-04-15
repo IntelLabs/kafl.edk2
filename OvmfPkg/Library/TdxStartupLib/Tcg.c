@@ -229,3 +229,25 @@ TdxMeasureFvImage (
   return Status;
 }
 
+EFI_STATUS
+MeasureQemuCfgSystemSts (
+  IN TCG_PCRINDEX     PCRIndex,
+  IN UINT8            *HashData,
+  IN UINTN            HashDataLength
+  )
+{
+  EFI_STATUS    Status;
+  CHAR8         *Item = "etc/system-states";
+
+  Status = CreateTdxExtendEvent (
+              PCRIndex,                   // PCRIndex
+              EV_PLATFORM_CONFIG_FLAGS,   // EventType
+              (UINT8*)Item,               // EventData
+              AsciiStrLen(Item),          // EventSize
+              HashData,                   // HashData
+              HashDataLength              // HashDataLen
+              );
+
+  return Status;
+}
+

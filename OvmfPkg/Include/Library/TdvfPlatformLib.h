@@ -8,7 +8,7 @@
 #include <Library/HobLib.h>
 
 #define EFI_RESOURCE_ATTRIBUTE_ENCRYPTED            0x04000000
-
+#pragma pack(1)
 typedef struct {
   ///
   EFI_HOB_GUID_TYPE       GuidHeader;
@@ -17,7 +17,7 @@ typedef struct {
   BOOLEAN                 SetNxForStack;
   UINT8                   SystemStates[6];
 } EFI_HOB_PLATFORM_INFO;
-
+#pragma pack()
 VOID
 EFIAPI
 TdvfPlatformInitialize (

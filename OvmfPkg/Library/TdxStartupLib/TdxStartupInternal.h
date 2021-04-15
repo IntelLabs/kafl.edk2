@@ -188,6 +188,13 @@ CreateTdxExtendEvent (
   IN      UINTN                     HashDataLen
   );
 
+EFI_STATUS
+MeasureQemuCfgSystemSts (
+  IN TCG_PCRINDEX     PCRIndex,
+  IN UINT8            *HashData,
+  IN UINTN            HashDataLength
+  );
+
 VOID
 EFIAPI
 AsmGetRelocationMap (
