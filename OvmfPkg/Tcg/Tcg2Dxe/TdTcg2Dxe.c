@@ -45,49 +45,16 @@
 
 #include <Protocol/Tdx.h>
 #include <Protocol/TdxAcpi.h>
+#include <Library/TdxStartupLib.h>
 #include <Library/TdxLib.h>
 #include <Library/TdxProbeLib.h>
 
-/**
-  If TD guest firmware supports measurement and an event is created,
-  TD guest firmware is designed to report the event log with the same
-  data structure in TCG-Platform-Firmware-Profile spec with
-  EFI_TCG2_EVENT_LOG_FORMAT_TCG_2 format.
-
-  So there is map between the TDX MRTD/RTMR registers and TPM PCRs.
-    MRTD     => PCR[0]
-    RTMR[0]  => PCR[1,7]
-    RTMR[1]  => PCR[2,3,4,5,6]
-    RTMR[2]  => PCR[8~15]
-    RTMR[3]  => NA
- **/
-PCR_TDX_EXTEND_MAP mPcrTdxExtendMaps[PCR_COUNT] = {
-  {0 , REG_TYPE_MRTD, 0,    0},
-  {1 , REG_TYPE_RTMR, 0,    1},
-  {2 , REG_TYPE_RTMR, 1,    2},
-  {3 , REG_TYPE_RTMR, 1,    2},
-  {4 , REG_TYPE_RTMR, 1,    2},
-  {5 , REG_TYPE_RTMR, 1,    2},
-  {6 , REG_TYPE_RTMR, 1,    2},
-  {7 , REG_TYPE_RTMR, 0,    1},
-  {8 , REG_TYPE_RTMR, 2,    3},
-  {9 , REG_TYPE_RTMR, 2,    3},
-  {10, REG_TYPE_RTMR, 2,    3},
-  {11, REG_TYPE_RTMR, 2,    3},
-  {12, REG_TYPE_RTMR, 2,    3},
-  {13, REG_TYPE_RTMR, 2,    3},
-  {14, REG_TYPE_RTMR, 2,    3},
-  {15, REG_TYPE_RTMR, 2,    3},
-};
 
 #define PERF_ID_TD_TCG2_DXE  0x3130
 // TODO TDX command/response size
 #define   TCG2_DEFAULT_MAX_COMMAND_SIZE         0x1000
 #define   TCG2_DEFAULT_MAX_RESPONSE_SIZE        0x1000
-#define   HANDOFF_TABLE_DESC                    "TdxTable"
 #define   TCG_EVENT_LOG_AREA_COUNT_MAX          1
-
-#pragma pack(1)
 
 typedef struct {
   CHAR16                                 *VariableName;
@@ -110,25 +77,6 @@ typedef struct {
   UINTN                             Next800155EventOffset;
 } TCG_EVENT_LOG_AREA_STRUCT;
 
-typedef struct {
-  UINT8                             TableDescriptionSize;
-  UINT8                             TableDescription[sizeof(HANDOFF_TABLE_DESC)];
-  UINT64                            NumberOfTables;
-  EFI_CONFIGURATION_TABLE           TableEntry[1];
-} TDX_HANDOFF_TABLE_POINTERS2;
-
-typedef struct {
-  UINT32            count;
-  TPMI_ALG_HASH     hashAlg;
-  BYTE              sha384[SHA384_DIGEST_SIZE];
-} TDX_DIGEST_VALUE;
-
-typedef struct {
-  UINT32            Signature;
-  UINT8             *HashData;
-  UINTN             HashDataLen;
-} TDX_EVENT;
-
 typedef struct _TCG_DXE_DATA {
   EFI_TCG2_BOOT_SERVICE_CAPABILITY  BsCap;
   TCG_EVENT_LOG_AREA_STRUCT         EventLogAreaStruct[TCG_EVENT_LOG_AREA_COUNT_MAX];
@@ -142,8 +90,6 @@ typedef struct{
   UINT16          HashSize;
   UINT32          HashMask;
 }TDX_HASH_INFO;
-
-#pragma pack()
 
 TCG2_EVENT_INFO_STRUCT mTcg2EventInfo[] = {
   {&gTcgEvent2EntryHobGuid,            EFI_TCG2_EVENT_LOG_FORMAT_TCG_2},
@@ -191,7 +137,7 @@ EFI_TDX_EVENTLOG_ACPI_TABLE mTdxEventlogAcpiTemplate = {
   0,  // lasa
 };
 
-static TDX_HASH_INFO mHashInfo[] = {
+TDX_HASH_INFO mHashInfo[] = {
   {TPM_ALG_SHA384, SHA384_DIGEST_SIZE, HASH_ALG_SHA384}
 };
 
@@ -973,13 +919,29 @@ TcgCommLogEvent (
   return EFI_SUCCESS;
 }
 
+/**
+    MRTD     => PCR[0]
+    RTMR[0]  => PCR[1,7]
+    RTMR[1]  => PCR[2,3,4,5,6]
+    RTMR[2]  => PCR[8~15]
+    RTMR[3]  => NA
+
+**/
 UINT32 GetMappedIndexInEventLog(UINT32 PCRIndex)
 {
-  PCR_TDX_EXTEND_MAP       *PcrTdxMap;
+  UINT32  RtmrIndex;
 
-  ASSERT(PCRIndex >= 0 && PCRIndex < PCR_COUNT);
-  PcrTdxMap = (PCR_TDX_EXTEND_MAP*)&mPcrTdxExtendMaps[PCRIndex];
-  return PcrTdxMap->EventlogIndex;
+  ASSERT (PCRIndex <= 16 && PCRIndex >= 0);
+  RtmrIndex = 0;
+  if (PCRIndex == 1 || PCRIndex == 7) {
+    RtmrIndex = 0;
+  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
+    RtmrIndex = 1;
+  } else if (PCRIndex >= 8 && PCRIndex <= 15) {
+    RtmrIndex = 2;
+  }
+
+  return RtmrIndex + 1;
 }
 
 /**
@@ -1535,14 +1497,9 @@ SetupEventLog (
   )
 {
   EFI_STATUS                      Status;
-  VOID                            *TcgEvent;
   EFI_PEI_HOB_POINTERS            GuidHob;
   EFI_PHYSICAL_ADDRESS            Lasa;
   UINTN                           Index;
-  VOID                            *DigestListBin;
-  UINT32                          DigestListBinSize;
-  UINT8                           *Event;
-  UINT32                          EventSize;
   TCG_EfiSpecIDEventStruct        *TcgEfiSpecIdEventStruct;
   UINT8                           TempBuf[sizeof(TCG_EfiSpecIDEventStruct)
                                         + sizeof(UINT32) 
@@ -1554,11 +1511,8 @@ SetupEventLog (
   TCG_EfiSpecIdEventAlgorithmSize *TempDigestSize;
   UINT8                           *VendorInfoSize;
   UINT32                          NumberOfAlgorithms;
-  TDX_EVENT                       *TdxEvent;
-  TCG_PCR_EVENT2                  *TcgPcrEvent2;
-  TPML_DIGEST_VALUES              DigestList;
 
-  DEBUG ((EFI_D_INFO, "SetupEventLog\n"));
+  DEBUG ((EFI_D_INFO, "Td: SetupEventLog\n"));
 
   //
   // 1. Create Log Area
@@ -1715,101 +1669,6 @@ SetupEventLog (
         if (EFI_ERROR (Status)) {
           return Status;
         }
-      }
-    }
-  }
-
-  //
-  // 3. Sync data from PEI to DXE
-  //
-  Status = EFI_SUCCESS;
-  for (Index = 0; Index < sizeof(mTcg2EventInfo)/sizeof(mTcg2EventInfo[0]); Index++) {
-    if ((mTcgDxeData.BsCap.SupportedEventLogs & mTcg2EventInfo[Index].LogFormat) != 0) {
-      GuidHob.Raw = GetHobList ();
-      Status = EFI_SUCCESS;
-      while (!EFI_ERROR (Status) && (GuidHob.Raw = GetNextGuidHob (mTcg2EventInfo[Index].EventGuid, GuidHob.Raw)) != NULL) {
-        //     
-        // TcgEvent points to TCG_PCR_EVENT2 + TDX_EVENT
-        // The Digest field in TCG_PCR_EVENT2 is not populated at this moment
-        // Instead its value should be calculated here by hashing the DATA designated by TDX_EVENT
-        //
-        // typedef struct tdTCG_PCR_EVENT2 {
-        //   TCG_PCRINDEX        PCRIndex;
-        //   TCG_EVENTTYPE       EventType;
-        //   TPML_DIGEST_VALUES  Digest;  // In TDVF this field is TDX_DIGEST_VALUE which is same as TPML_DIGEST_VALUES
-        //   UINT32              EventSize;
-        //   UINT8               Event[1];
-        // } TCG_PCR_EVENT2;
-        //
-        // typedef struct {
-        //   UINT32 Signature;
-        //   UINT8  *HashData;
-        //   UINTN  HashDataLen;
-        // }TDX_EVENT
-
-        TcgEvent = AllocateCopyPool (GET_GUID_HOB_DATA_SIZE (GuidHob.Guid), GET_GUID_HOB_DATA (GuidHob.Guid));
-        DEBUG((DEBUG_INFO, "GuidHob size = 0x%x\n", GET_GUID_HOB_DATA_SIZE (GuidHob.Guid)));
-        ASSERT (TcgEvent != NULL);
-        TcgPcrEvent2 = (TCG_PCR_EVENT2*)TcgEvent;
-
-        // This is for next iteration
-        GuidHob.Raw = GET_NEXT_HOB (GuidHob);
-        
-        //
-        // TDVF only supports EFI_TCG2_EVENT_LOG_FORMAT_TCG_2
-        if(mTcg2EventInfo[Index].LogFormat == EFI_TCG2_EVENT_LOG_FORMAT_TCG_2) {
-          
-          //
-          // PCRIndex + EventType + Digest + EventSize + Event
-          // 
-          DigestListBin = (UINT8 *)TcgEvent + sizeof(TCG_PCRINDEX) + sizeof(TCG_EVENTTYPE);
-          DigestListBinSize = GetDigestListBinSize (DigestListBin);
-
-          //
-          // Event size.
-          //
-          CopyMem (&EventSize, (UINT8 *)DigestListBin + DigestListBinSize, sizeof(UINT32));
-          Event = (UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32);
-
-          //
-          // TdxEvent
-          //
-          TdxEvent = (TDX_EVENT*)((UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32) + EventSize);
-          DEBUG((DEBUG_INFO, "DigestListBinSize=0x%x, EventSize=0x%x\n", 
-                 DigestListBinSize, EventSize));
-          DEBUG((DEBUG_INFO, "HashData: %p, HashDataLen=0x%x\n",
-                 TdxEvent->HashData, TdxEvent->HashDataLen));
-
-          
-          ZeroMem((UINT8*)&DigestList, sizeof(DigestList));
-          // 
-          // Calculate the Digest by hashing(SHA384) the DATA designated by TdxEvent
-          //
-          Status = HashAndExtend(TcgPcrEvent2->PCRIndex, 
-                                TdxEvent->HashData, 
-                                TdxEvent->HashDataLen, 
-                                &DigestList);
-          DEBUG((DEBUG_INFO, "Digest count=%d, hashAlg=0x%x\n", DigestList.count, DigestList.digests[0].hashAlg));
-
-          ASSERT(Status == EFI_SUCCESS);
-          ASSERT(DigestList.count == 1 && DigestList.digests[0].hashAlg == TPM_ALG_SHA384);
-          TcgPcrEvent2->Digest.count = 1;
-          CopyMem((UINT8*)&TcgPcrEvent2->Digest + sizeof(UINT32), (UINT8*)&DigestList.digests[0], sizeof(TPMI_ALG_HASH) + SHA384_DIGEST_SIZE);
-          DumpEvent2(TcgPcrEvent2);
-
-          //
-          // Log the event
-          //
-          Status = TcgDxeLogEvent (
-                     mTcg2EventInfo[Index].LogFormat,
-                     TcgEvent,
-                     sizeof(TCG_PCRINDEX) + sizeof(TCG_EVENTTYPE) + DigestListBinSize + sizeof(UINT32),
-                     Event,
-                     EventSize
-                     );
-        }
-
-        FreePool (TcgEvent);
       }
     }
   }
@@ -2505,6 +2364,73 @@ OnExitBootServicesFailed (
 
 }
 
+EFI_STATUS
+SyncTdTcgEvent()
+{
+  EFI_STATUS              Status;
+  EFI_PEI_HOB_POINTERS    GuidHob;
+  VOID                    *TcgEvent;
+  VOID                    *DigestListBin;
+  UINT32                  DigestListBinSize;
+  UINT8                   *Event;
+  UINT32                  EventSize;
+  TDX_EVENT               *TdxEvent;
+  TPML_DIGEST_VALUES      DigestList;
+
+  DEBUG ((DEBUG_INFO, "Sync Tdx event from SEC\n"));
+
+  Status = EFI_SUCCESS;
+  GuidHob.Guid = GetFirstGuidHob (&gTcgEvent2EntryHobGuid);
+
+  while (!EFI_ERROR(Status) && GuidHob.Guid != NULL) {
+    TcgEvent = AllocateCopyPool (GET_GUID_HOB_DATA_SIZE (GuidHob.Guid), GET_GUID_HOB_DATA (GuidHob.Guid));
+
+    GuidHob.Guid = GET_NEXT_HOB (GuidHob);
+    GuidHob.Guid = GetNextGuidHob (&gTcgEvent2EntryHobGuid, GuidHob.Guid);
+
+    DigestListBin = (UINT8 *)TcgEvent + sizeof(TCG_PCRINDEX) + sizeof(TCG_EVENTTYPE);
+    DigestListBinSize = GetDigestListBinSize(DigestListBin);
+
+    //
+    // Event size.
+    //
+    EventSize = *(UINT32*)((UINT8 *) DigestListBin + DigestListBinSize);
+    Event = (UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32);
+    //
+    // Hash and extend the data from SEC
+    //
+    TdxEvent = (TDX_EVENT*)((UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32) + EventSize);
+    Status = HashAndExtend (*(UINT32*)(TcgEvent),
+                        (VOID*)(UINTN)TdxEvent->HashDataPtr,
+                        TdxEvent->HashDataLen,
+                        &DigestList);
+
+    //
+    // Copy the hash data to TcgEvent
+    //
+    CopyMem ((UINT8*)DigestListBin + sizeof (UINT32) + sizeof (TPMI_ALG_HASH),
+            DigestList.digests[0].digest.sha384,
+            SHA384_DIGEST_SIZE);
+
+    //
+    // Log the event
+    //
+    Status = TcgDxeLogEvent (
+               mTcg2EventInfo[0].LogFormat,
+               TcgEvent,
+               sizeof (TCG_PCRINDEX) + sizeof (TCG_EVENTTYPE) + DigestListBinSize + sizeof (UINT32),
+               Event,
+               EventSize
+               );
+
+    DumpEvent2 ((TCG_PCR_EVENT2*) TcgEvent);
+    FreePool (TcgEvent);
+  }
+
+  return Status;
+}
+
+
 /**
   Install TDVF ACPI Table when ACPI Table Protocol is available.
 
@@ -2561,7 +2487,6 @@ InstallAcpiTable (
   ASSERT_EFI_ERROR (Status);
 
   DEBUG((DEBUG_INFO, "TDX Eventlog ACPI Table is measured and logged\n"));
-
 }
 
 /**
@@ -2646,6 +2571,9 @@ DriverEntry (
   // Setup the log area and copy event log from hob list to it
   //
   Status = SetupEventLog ();
+  ASSERT_EFI_ERROR (Status);
+
+  Status = SyncTdTcgEvent();
   ASSERT_EFI_ERROR (Status);
 
   //

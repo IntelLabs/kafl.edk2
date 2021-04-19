@@ -29,7 +29,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/ResetSystemLib.h>
 #include <Library/PrintLib.h>
-
+#include <Library/TdxStartupLib.h>
 #include "TdxStartupInternal.h"
 
 #pragma pack (1)
@@ -70,6 +70,7 @@ CreateTdxExtendEvent (
   TDX_EVENT                         *TdxEvent;
   UINT8                             *DigestBuffer;
   TDX_DIGEST_VALUE                  *TdxDigest;
+  UINT8                             *Ptr;
 
   DEBUG ((EFI_D_INFO, "Creating Tcg2PcrEvent PCR %d EventType 0x%x\n", PCRIndex, EventType));
 
@@ -91,40 +92,43 @@ CreateTdxExtendEvent (
 
   DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - data %p\n", EventHobData));
 
+  Ptr = (UINT8*)EventHobData;
   //
   // Initialize PcrEvent data now
   //
-  TcgPcrEvent2 = EventHobData;
-  TcgPcrEvent2->PCRIndex = PCRIndex;
-  TcgPcrEvent2->EventType = EventType;
+  CopyMem(Ptr, &PCRIndex, sizeof(TCG_PCRINDEX));
+  Ptr += sizeof(TCG_PCRINDEX);
+  CopyMem(Ptr, &EventType, sizeof(TCG_EVENTTYPE));
+  Ptr += sizeof(TCG_EVENTTYPE);
 
   //
   // We don't have a digest to copy yet, but we can to copy the eventsize/data now
   //
-  DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest;
+  DigestBuffer = Ptr;
   DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - digest %p\n", DigestBuffer));
 
   TdxDigest = (TDX_DIGEST_VALUE *)DigestBuffer;
   TdxDigest->count = 1;
   TdxDigest->hashAlg = TPM_ALG_SHA384;
+  ZeroMem(TdxDigest->sha384, SHA384_DIGEST_SIZE);
 
-  DigestBuffer = DigestBuffer + sizeof(TDX_DIGEST_VALUE);
+  Ptr += sizeof(TDX_DIGEST_VALUE);
   DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - eventdata %p\n", DigestBuffer));
 
-  CopyMem (DigestBuffer, &EventSize, sizeof(TcgPcrEvent2->EventSize));
-  DigestBuffer = DigestBuffer + sizeof(TcgPcrEvent2->EventSize);
-  CopyMem (DigestBuffer, EventData, EventSize);
-  DigestBuffer = DigestBuffer + EventSize;
-  TdxEvent = (TDX_EVENT *)DigestBuffer;
+  CopyMem (Ptr, &EventSize, sizeof(UINT32));
+  Ptr += sizeof(UINT32);
+  CopyMem (Ptr, EventData, EventSize);
+  Ptr += EventSize;
+  TdxEvent = (TDX_EVENT *)Ptr;
 
   //
   // Initialize the TdxEvent so we can perform measurement in DXE.
   // During early DXE, the gTcgEvent2EntryHobGuid will be parsed, the data hashed, and TcgEvent2 hobs
   // updated with the updated hash
   //
-  //TdxEvent->Signature = TCG_TDX_EVENT_DATA_SIGNATURE;
-  TdxEvent->HashData = HashData;
-  TdxEvent->HashDataLen = HashDataLen;
+  TdxEvent->Signature = SIGNATURE_32('T', 'D', 'E', 'T');
+  TdxEvent->HashDataPtr = (UINT64)(UINTN)HashData;
+  TdxEvent->HashDataLen = (UINT64)HashDataLen;
 
   Status = EFI_SUCCESS;
   return Status;

@@ -19,18 +19,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <Uefi/UefiBaseType.h>
 
-#define REG_TYPE_NA    0
-#define REG_TYPE_MRTD  1
-#define REG_TYPE_RTMR  2
-#define PCR_COUNT      16
-
-typedef struct {
-  UINT8     Pcr;          // PCR index
-  UINT8     RegType;      // RTMR or MRTD
-  UINT8     Index;        // index in RTMR/MRTD
-  UINT8     EventlogIndex;// index in EventLog
-} PCR_TDX_EXTEND_MAP;
-
 #define EFI_TD_PROTOCOL_GUID  \
   {0x96751a3d, 0x72f4, 0x41a6, { 0xa7, 0x94, 0xed, 0x5d, 0x0e, 0x67, 0xae, 0x6b }}
 

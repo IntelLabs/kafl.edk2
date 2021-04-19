@@ -18,9 +18,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/TdxLib.h>
 #include <Library/TdxProbeLib.h>
 #include <Protocol/Tdx.h>
+#include <Library/TdxStartupLib.h>
 #include "HashLibBaseCryptoRouterCommon.h"
-
-extern PCR_TDX_EXTEND_MAP mPcrTdxExtendMaps[PCR_COUNT];
 
 HASH_INTERFACE   mHashInterface[HASH_COUNT] = {{{0}, NULL, NULL, NULL}};
 UINTN            mHashInterfaceCount = 0;
@@ -128,6 +127,31 @@ HashUpdate (
 }
 
 /**
+    MRTD     => PCR[0]
+    RTMR[0]  => PCR[1,7]
+    RTMR[1]  => PCR[2,3,4,5,6]
+    RTMR[2]  => PCR[8~15]
+    RTMR[3]  => NA
+
+**/
+UINT8 GetMappedRtmrIndex(UINT32 PCRIndex)
+{
+  UINT8  RtmrIndex;
+
+  ASSERT (PCRIndex <= 16 && PCRIndex >= 0);
+  RtmrIndex = 0;
+  if (PCRIndex == 1 || PCRIndex == 7) {
+    RtmrIndex = 0;
+  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
+    RtmrIndex = 1;
+  } else if (PCRIndex >= 8 && PCRIndex <= 15) {
+    RtmrIndex = 2;
+  }
+
+  return RtmrIndex;
+}
+
+/**
   Hash sequence complete and extend to PCR.
 
   @param HashHandle    Hash handle.
@@ -153,14 +177,10 @@ HashCompleteAndExtend (
   UINTN               Index;
   EFI_STATUS          Status;
   UINT32              HashMask;
-  PCR_TDX_EXTEND_MAP PcrTdxExtendMap;
 
   if (mHashInterfaceCount == 0) {
     return EFI_UNSUPPORTED;
   }
-
-  PcrTdxExtendMap = mPcrTdxExtendMaps[PcrIndex];
-  ASSERT(PcrTdxExtendMap.Pcr == PcrIndex);
 
   CheckSupportedHashMaskMismatch ();
 
@@ -183,7 +203,7 @@ HashCompleteAndExtend (
   Status = TdExtendRtmr (
              (UINT32*)DigestList->digests[0].digest.sha384,
              SHA384_DIGEST_SIZE,
-             (UINT8)PcrTdxExtendMap.Index
+             GetMappedRtmrIndex(PcrIndex)
              );
   return Status;
 }

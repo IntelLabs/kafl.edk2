@@ -56,25 +56,12 @@
   } MP_RELOCATION_MAP;
 
 #define HANDOFF_TABLE_DESC  "TdxTable"
-  typedef struct {
-    UINT8                             TableDescriptionSize;
-    UINT8                             TableDescription[sizeof(HANDOFF_TABLE_DESC)];
-    UINT64                            NumberOfTables;
-    EFI_CONFIGURATION_TABLE           TableEntry[1];
-  } TDX_HANDOFF_TABLE_POINTERS2;
-
-  typedef struct {
-    UINT32            count;
-    TPMI_ALG_HASH     hashAlg;
-    BYTE              sha384[SHA384_DIGEST_SIZE];
-  } TDX_DIGEST_VALUE;
-
-  typedef struct {
-    UINT32            Signature;
-    UINT8             *HashData;
-    UINTN             HashDataLen;
-  } TDX_EVENT;
-
+typedef struct {
+  UINT8                             TableDescriptionSize;
+  UINT8                             TableDescription[sizeof (HANDOFF_TABLE_DESC)];
+  UINT64                            NumberOfTables;
+  EFI_CONFIGURATION_TABLE           TableEntry[1];
+} TDX_HANDOFF_TABLE_POINTERS2;
 #pragma pack()
 
 #define LOOPIT(X) do { \
