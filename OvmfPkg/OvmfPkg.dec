@@ -385,16 +385,6 @@
 
   ## This PCD records LASA field in TDX EVENTLOG ACPI table.
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxEventlogAcpiTableLasa|0|UINT64|0x104
-  ## This PCD indicates Hash mask for TDX 1.0 Bit definition strictly follows 
-  #  TCG Algorithm Registry.
-  #  TDX 1.0 supports SHA384 only.
-  #    BIT2  -  SHA384.<BR>
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxHashMask|0x00000004|UINT32|0x105
-
-  ## This PCD indicated final BIOS supported Hash mask.
-  #    Bios may choose to register a subset of PcdTdxHashMask.
-  #    So this PCD is final value of how many hash algo is extended to RTMR.
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxHashAlgorithmBitmap|0x4|UINT32|0x106
 
 [PcdsFeatureFlag]
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderPciTranslation|TRUE|BOOLEAN|0x1c

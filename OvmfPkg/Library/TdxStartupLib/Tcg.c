@@ -44,6 +44,8 @@ typedef struct {
 
 #pragma pack ()
 
+extern UINT32 GetMappedRtmrIndex(UINT32 PCRIndex);
+
 /**
   Add a new entry to the Event Log.
 
@@ -65,14 +67,26 @@ CreateTdxExtendEvent (
   )
 {
   EFI_STATUS                        Status;
+  UINT32                            RtmrIndex;
   VOID                              *EventHobData;
   TCG_PCR_EVENT2                    *TcgPcrEvent2;
-  TDX_EVENT                         *TdxEvent;
   UINT8                             *DigestBuffer;
   TDX_DIGEST_VALUE                  *TdxDigest;
+  TPML_DIGEST_VALUES                DigestList;
   UINT8                             *Ptr;
 
-  DEBUG ((EFI_D_INFO, "Creating Tcg2PcrEvent PCR %d EventType 0x%x\n", PCRIndex, EventType));
+
+  DEBUG ((EFI_D_INFO, "Creating TdTcg2PcrEvent PCR %d EventType 0x%x\n", PCRIndex, EventType));
+
+  RtmrIndex = GetMappedRtmrIndex (PCRIndex);
+  Status = HashAndExtend (RtmrIndex,
+                      (VOID*)HashData,
+                      HashDataLen,
+                      &DigestList);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((EFI_D_INFO, "Failed to HashAndExtend. %r\n", Status));
+    return Status;
+  }
 
   //
   // Use TDX_DIGEST_VALUE in the GUID HOB DataLength calculation
@@ -83,8 +97,7 @@ CreateTdxExtendEvent (
     &gTcgEvent2EntryHobGuid,
     sizeof(TcgPcrEvent2->PCRIndex) + sizeof(TcgPcrEvent2->EventType) +
     sizeof(TDX_DIGEST_VALUE) +
-    sizeof(TcgPcrEvent2->EventSize) + EventSize +
-    sizeof(TDX_EVENT));
+    sizeof(TcgPcrEvent2->EventSize) + EventSize);
 
   if (EventHobData == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -101,16 +114,15 @@ CreateTdxExtendEvent (
   CopyMem(Ptr, &EventType, sizeof(TCG_EVENTTYPE));
   Ptr += sizeof(TCG_EVENTTYPE);
 
-  //
-  // We don't have a digest to copy yet, but we can to copy the eventsize/data now
-  //
   DigestBuffer = Ptr;
   DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - digest %p\n", DigestBuffer));
 
   TdxDigest = (TDX_DIGEST_VALUE *)DigestBuffer;
   TdxDigest->count = 1;
   TdxDigest->hashAlg = TPM_ALG_SHA384;
-  ZeroMem(TdxDigest->sha384, SHA384_DIGEST_SIZE);
+  CopyMem (TdxDigest->sha384,
+          DigestList.digests[0].digest.sha384,
+          SHA384_DIGEST_SIZE);
 
   Ptr += sizeof(TDX_DIGEST_VALUE);
   DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - eventdata %p\n", DigestBuffer));
@@ -119,16 +131,6 @@ CreateTdxExtendEvent (
   Ptr += sizeof(UINT32);
   CopyMem (Ptr, EventData, EventSize);
   Ptr += EventSize;
-  TdxEvent = (TDX_EVENT *)Ptr;
-
-  //
-  // Initialize the TdxEvent so we can perform measurement in DXE.
-  // During early DXE, the gTcgEvent2EntryHobGuid will be parsed, the data hashed, and TcgEvent2 hobs
-  // updated with the updated hash
-  //
-  TdxEvent->Signature = SIGNATURE_32('T', 'D', 'E', 'T');
-  TdxEvent->HashDataPtr = (UINT64)(UINTN)HashData;
-  TdxEvent->HashDataLen = (UINT64)HashDataLen;
 
   Status = EFI_SUCCESS;
   return Status;

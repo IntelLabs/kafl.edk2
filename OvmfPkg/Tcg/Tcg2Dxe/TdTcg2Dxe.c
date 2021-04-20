@@ -2374,8 +2374,6 @@ SyncTdTcgEvent()
   UINT32                  DigestListBinSize;
   UINT8                   *Event;
   UINT32                  EventSize;
-  TDX_EVENT               *TdxEvent;
-  TPML_DIGEST_VALUES      DigestList;
 
   DEBUG ((DEBUG_INFO, "Sync Tdx event from SEC\n"));
 
@@ -2396,21 +2394,6 @@ SyncTdTcgEvent()
     //
     EventSize = *(UINT32*)((UINT8 *) DigestListBin + DigestListBinSize);
     Event = (UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32);
-    //
-    // Hash and extend the data from SEC
-    //
-    TdxEvent = (TDX_EVENT*)((UINT8 *)DigestListBin + DigestListBinSize + sizeof(UINT32) + EventSize);
-    Status = HashAndExtend (*(UINT32*)(TcgEvent),
-                        (VOID*)(UINTN)TdxEvent->HashDataPtr,
-                        TdxEvent->HashDataLen,
-                        &DigestList);
-
-    //
-    // Copy the hash data to TcgEvent
-    //
-    CopyMem ((UINT8*)DigestListBin + sizeof (UINT32) + sizeof (TPMI_ALG_HASH),
-            DigestList.digests[0].digest.sha384,
-            SHA384_DIGEST_SIZE);
 
     //
     // Log the event
@@ -2573,8 +2556,10 @@ DriverEntry (
   Status = SetupEventLog ();
   ASSERT_EFI_ERROR (Status);
 
-  Status = SyncTdTcgEvent();
-  ASSERT_EFI_ERROR (Status);
+  if (!EFI_ERROR (Status)) {
+    Status = SyncTdTcgEvent();
+    ASSERT_EFI_ERROR (Status);
+  }
 
   //
   // Measure handoff tables, Boot#### variables etc.

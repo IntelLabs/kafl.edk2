@@ -60,6 +60,7 @@
   MemoryAllocationLib
   TdvfPlatformLib
   PrePiLib
+  HashLib
 
 [Guids]
   gEfiHobMemoryAllocModuleGuid

@@ -17,12 +17,6 @@ typedef struct {
   BYTE              sha384[SHA384_DIGEST_SIZE];
 } TDX_DIGEST_VALUE;
 
-typedef struct {
-  UINT32            Signature;
-  UINT64            HashDataPtr;
-  UINT64            HashDataLen;
-} TDX_EVENT;
-
 #pragma pack()
 
 

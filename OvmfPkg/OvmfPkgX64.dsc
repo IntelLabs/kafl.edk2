@@ -294,6 +294,7 @@
   TdvfPlatformLib|OvmfPkg/Library/TdvfPlatformLibQemu/TdvfPlatformLibQemuSec.inf
   PrePiLib|OvmfPkg/Library/PrePiLibTdx/PrePiLibTdx.inf
   TdxStartupLib|OvmfPkg/Library/TdxStartupLib/TdxStartupLib.inf
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/SecCryptLib.inf
 
 [LibraryClasses.common.PEI_CORE]
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
@@ -731,6 +732,8 @@
   OvmfPkg/Sec/SecMain.inf {
     <LibraryClasses>
       NULL|MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
+      HashLib|OvmfPkg/Library/HashLibBaseCryptoRouterTdx/HashLibBaseCryptoRouter.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
   }
 
   #
@@ -1086,8 +1089,7 @@
   #
   OvmfPkg/Tcg/Tcg2Dxe/TdTcg2Dxe.inf {
     <LibraryClasses>
-      #TdxLib|MdePkg/Library/TdxLib/TdxLib.inf
-      HashLib|OvmfPkg/Library/HashLibBaseCryptoRouterTdx/HashLibBaseCryptoRouterDxe.inf
+      HashLib|OvmfPkg/Library/HashLibBaseCryptoRouterTdx/HashLibBaseCryptoRouter.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
   }
 

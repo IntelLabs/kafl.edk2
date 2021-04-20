@@ -16,7 +16,7 @@
 #include <IndustryStandard/Tdx.h>
 
 #define RTMR_COUNT                  4
-#define TD_EXTEND_BUFFER_LEN        (16 * 4 + 32)
+#define TD_EXTEND_BUFFER_LEN        (64 + 64)
 #define EXTEND_BUFFER_ADDRESS_MASK  0x3f
 
 
@@ -31,10 +31,8 @@ TDX_EXTEND_BUFFER   mExtendBuffer;
 
 /**
   TD.RTMR.EXTEND requires 64B-aligned guest physical address of
-  48B-extension data.
-  #pragma pack() only supports 1/2/4/8/16, So we pre-allocate a
-  (16*4 + 32) length buffer in stack. In runtime we walk thru the
-  Buffer to find out a 64B-aligned start address.
+  48B-extension data. In runtime we walk thru the Buffer to find
+  out a 64B-aligned start address.
 
   @return Start address of the extend buffer
 
@@ -45,28 +43,23 @@ GetExtendBuffer (
   VOID
   )
 {
-  UINT8     ExtendBufferStart;
   UINT8     *ExtendBufferAddress;
+  UINT64    Gap;
 
   if (mExtendBufferAddress != NULL) {
     return mExtendBufferAddress;
   }
 
-  ExtendBufferStart = 0;
   ExtendBufferAddress = mExtendBuffer.Buffer;
 
-  while (ExtendBufferStart < TD_EXTEND_BUFFER_LEN) {
-    ExtendBufferAddress += ExtendBufferStart;
-    if (((UINT64)(UINTN)ExtendBufferAddress & EXTEND_BUFFER_ADDRESS_MASK) == 0) {
-      mExtendBufferAddress = ExtendBufferAddress;
-      break;
-    } else {
-      ExtendBufferStart += 16;
-    }
-  }
+  Gap = 0x40 - ((UINT64)(UINTN)ExtendBufferAddress & EXTEND_BUFFER_ADDRESS_MASK);
+  mExtendBufferAddress = (UINT8*)((UINT64)(UINTN)ExtendBufferAddress + Gap);
 
-  ASSERT (ExtendBufferStart < TD_EXTEND_BUFFER_LEN);
-  DEBUG ((DEBUG_VERBOSE, "ExtendBufferAddress: 0x%p, 0x%x\n", ExtendBufferAddress, ExtendBufferStart));
+  DEBUG ((DEBUG_VERBOSE, "ExtendBufferAddress: 0x%p, Gap: 0x%x\n", ExtendBufferAddress, Gap));
+  DEBUG ((DEBUG_VERBOSE, "mExtendBufferAddress: 0x%p\n", mExtendBufferAddress));
+
+  ASSERT (mExtendBufferAddress + 64 <= ExtendBufferAddress + TD_EXTEND_BUFFER_LEN);
+
   return mExtendBufferAddress;
 }
 
