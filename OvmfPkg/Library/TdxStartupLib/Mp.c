@@ -101,12 +101,14 @@ MpAcceptMemoryResourceRange (
   )
 {
   UINT64                      Pages;
-  EFI_PHYSICAL_ADDRESS        Stride;
-  EFI_PHYSICAL_ADDRESS        AcceptSize;
+  UINT64                      Stride;
+  UINT64                      AcceptChunkSize;
+  UINT64                      AcceptPageSize;
   volatile MP_WAKEUP_MAILBOX  *MailBox;
 
   MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox();
-  AcceptSize = FixedPcdGet64(PcdTdxAcceptPageChunkSize);
+  AcceptChunkSize = FixedPcdGet64(PcdTdxAcceptChunkSize);
+  AcceptPageSize = FixedPcdGet64(PcdTdxAcceptPageSize);
 
   MpSerializeStart();
 
@@ -114,8 +116,8 @@ MpAcceptMemoryResourceRange (
     0,
     PhysicalAddress,
     PhysicalEnd,
-    AcceptSize,
-    EFI_PAGE_SIZE);
+    AcceptChunkSize,
+    AcceptPageSize);
 
   //
   // All cpus share the burden of accepting the pages
@@ -123,7 +125,7 @@ MpAcceptMemoryResourceRange (
   // and then skip pass range the other cpus do
   // Stride is the amount of skip
   //
-  Stride = GetNumCpus() * AcceptSize;
+  Stride = GetNumCpus() * AcceptChunkSize;
   //
   // Keep accepting until end of resource
   //
@@ -131,11 +133,11 @@ MpAcceptMemoryResourceRange (
     //
     // Decrease size of near end of resource if needed.
     //
-    Pages = RShiftU64(MIN(AcceptSize, PhysicalEnd - PhysicalAddress), EFI_PAGE_SHIFT);
+    Pages = RShiftU64(MIN(AcceptChunkSize, PhysicalEnd - PhysicalAddress), EFI_PAGE_SHIFT);
 
     MailBox->Tallies[0] += (UINT32)Pages;
 
-    TdAcceptPages ( PhysicalAddress, Pages, EFI_PAGE_SIZE);
+    TdAcceptPages ( PhysicalAddress, Pages, AcceptPageSize);
     //
     // Bump address to next chunk this cpu is responisble for
     //

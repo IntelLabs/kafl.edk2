@@ -605,8 +605,10 @@
 !if $(TDX_IGNORE_VE_HLT) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|TRUE
 !endif
-  # 32M
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageChunkSize|0x2000000
+  # Accept chunk size - 32M
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptChunkSize|0x2000000
+  # Accept page size - 4k
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageSize|0x1000
 
   # Noexec settings for DXE.
   # TDX doesn't allow us to change EFER so make sure these are disabled
