@@ -12,6 +12,7 @@ The staging is at https://github.com/tianocore/edk2-staging/tree/TDVF
 
 ## Branch Description
 Code before the tag of tdvf_poc_ww17.5 is a standalone package. It is deprecated.
+
 Code after the tag of tdvf_poc_ww17.5 is of TDVF One Binary, which means the Tdvf features are merged into OvmfPkg. Its binary name is OVMF.fd. It can be run on both Td and Non-Td guest.
 
 This branch owner: Jiewen Yao <jiewen.yao@intel.com>, Min Xu <min.m.xu@intel.com>
@@ -33,7 +34,9 @@ Following the edk2 build process, you will find the TDVF binaries under the $WOR
 
 For example, to build TDVF (in Linux):  
   `$ cd edk2`
+
   `$ source edksetup.sh`
+
   `$ build -p OvmfPkg/OvmfPkgX64.dsc -t GCC5 -a X64`  
 
 ## Secure Boot
