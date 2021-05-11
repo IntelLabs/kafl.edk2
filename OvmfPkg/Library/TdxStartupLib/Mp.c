@@ -119,7 +119,7 @@ BspAcceptMemoryResourceRange (
     //
     // Decrease size of near end of resource if needed.
     //
-    Pages = RShiftU64(MIN(AcceptChunkSize, Length), EFI_PAGE_SHIFT);
+    Pages = RShiftU64( MIN (AcceptChunkSize, StartAddress + Length - PhysicalAddress), EFI_PAGE_SHIFT);
 
     MailBox->Tallies[0] += (UINT32)Pages;
 
