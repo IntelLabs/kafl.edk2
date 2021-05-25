@@ -56,7 +56,7 @@ TdAcceptPages (
   }
 
   for (Index = 0; Index < NumberOfPages; Index++) {
-    Status = TdCall (TDCALL_TDACCEPTPAGE,Address, GpaPageSize, 0, 0);
+    Status = TdCall (TDCALL_TDACCEPTPAGE,Address | GpaPageSize, 0, 0, 0);
     if (Status != TDX_EXIT_REASON_SUCCESS) {
         if ((Status & ~0xFFULL) == TDX_EXIT_REASON_PAGE_ALREADY_ACCEPTED) {
           mNumberOfDuplicatedAcceptedPages++;

@@ -129,7 +129,6 @@ BspAcceptMemoryResourceRange (
     //
     PhysicalAddress += Stride;
   }
-
   return Status;
 }
 
@@ -208,7 +207,7 @@ MpAcceptMemoryResourceRange (
       StartAddress1 = 0;
       Length1 = 0;
       StartAddress2 = PhysicalAddress;
-      Length2 = TotalLength & ALIGNED_2MB_MASK;
+      Length2 = TotalLength & ~(UINT64)ALIGNED_2MB_MASK;
 
       if (TotalLength > Length2) {
         //
@@ -234,7 +233,7 @@ MpAcceptMemoryResourceRange (
 
       } else {
         StartAddress2 = PhysicalAddress + Length1;
-        Length2 = (TotalLength - Length1) & ALIGNED_2MB_MASK;
+        Length2 = (TotalLength - Length1) & ~(UINT64)ALIGNED_2MB_MASK;
         StartAddress3 = StartAddress2 + Length2;
         Length3 = TotalLength - Length1 - Length2;
         ASSERT (Length3 < SIZE_2MB);
@@ -258,12 +257,12 @@ MpAcceptMemoryResourceRange (
       AcceptChunkSize,
       AcceptPageSize);
 
-      Status = BspAcceptMemoryResourceRange (
-                  StartAddress2,
-                  Length2,
-                  AcceptChunkSize,
-                  AcceptPageSize);
-      ASSERT (!EFI_ERROR (Status));
+    Status = BspAcceptMemoryResourceRange (
+                StartAddress2,
+                Length2,
+                AcceptChunkSize,
+                AcceptPageSize);
+    ASSERT (!EFI_ERROR (Status));
   }
 
   if (Length1 > 0) {

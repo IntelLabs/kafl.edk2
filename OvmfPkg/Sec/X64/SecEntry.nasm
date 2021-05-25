@@ -144,30 +144,35 @@ ParkAp:
     mov     rcx, [rsp + AcceptPageArgsPhysicalStart]
     mov     rbx, [rsp + AcceptPageArgsAcceptSize]
 
+    ;
     ; Accept Page size
-    mov     rdx, [rsp + AcceptPageArgsPageSize]
-    cmp     rdx, SIZE_4KB
+    ; r15: AcceptPageSize
+    mov     r15, [rsp + AcceptPageArgsPageSize]
+    cmp     r15, SIZE_4KB
     je      .set_4kb
-    cmp     rdx, SIZE_2MB
+    cmp     r15, SIZE_2MB
     je      .set_2mb
-    cmp     rdx, SIZE_1GB
+    cmp     r15, SIZE_1GB
     je      .set_1gb
 .set_4kb
-    mov     rdx, 0
+    mov     r15, 0
     jmp     .physical_address
 .set_2mb
-    mov     rdx, 1
+    mov     r15, 1
     jmp     .physical_address
 .set_1gb
-    mov     rdx, 2
+    mov     r15, 2
     jmp     .physical_address
 
 .physical_address    
     ;
     ; PhysicalAddress += (CpuId * AcceptSize)
+    xor     rdx, rdx
     mov     eax, ebp
     mul     ebx
     add     rcx, rax
+    shl     rdx, 32
+    add     rcx, rdx
 
 .do_accept_next_range:
 
@@ -198,7 +203,8 @@ ParkAp:
     ; Accept address in rcx
     ;
     mov     rax, TDCALL_TDACCEPTPAGE
-    ;xor     rdx, rdx
+    xor     rdx, rdx
+    or      rcx, r15
     tdcall
 
     ;
@@ -223,11 +229,14 @@ ParkAp:
     ;
     ; Restore address before, and then increment by stride (num-cpus * acceptsize)
     ;
+    xor     rdx, rdx
     mov     rcx, r11
     mov     eax, r8d
-    mov     rbx, [rsp + AcceptPageArgsAcceptSize]
+    mov     ebx, [rsp + AcceptPageArgsAcceptSize]
     mul     ebx
     add     rcx, rax
+    shl     rdx, 32
+    add     rcx, rdx
     jmp     .do_accept_next_range
 
 .do_finish_command:
