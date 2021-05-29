@@ -119,35 +119,6 @@ LINEAR_CODE_SEL     equ $-GDT_BASE
     DB      0            ; base 31:24
 
 %ifdef ARCH_X64
-NULL_SEL1            equ $-GDT_BASE
-    DW      0            ; limit 15:0
-    DW      0            ; base 15:0
-    DB      0            ; base 23:16
-    DB      0            ; sys flag, dpl, type
-    DB      0            ; limit 19:16, flags
-    DB      0            ; base 31:24
-NULL_SEL2            equ $-GDT_BASE
-    DW      0            ; limit 15:0
-    DW      0            ; base 15:0
-    DB      0            ; base 23:16
-    DB      0            ; sys flag, dpl, type
-    DB      0            ; limit 19:16, flags
-    DB      0            ; base 31:24
-NULL_SEL3            equ $-GDT_BASE
-    DW      0            ; limit 15:0
-    DW      0            ; base 15:0
-    DB      0            ; base 23:16
-    DB      0            ; sys flag, dpl, type
-    DB      0            ; limit 19:16, flags
-    DB      0            ; base 31:24
-NULL_SEL4            equ $-GDT_BASE
-    DW      0            ; limit 15:0
-    DW      0            ; base 15:0
-    DB      0            ; base 23:16
-    DB      0            ; sys flag, dpl, type
-    DB      0            ; limit 19:16, flags
-    DB      0            ; base 31:24
-
 ; linear code (64-bit) segment descriptor
 LINEAR_CODE64_SEL   equ $-GDT_BASE
     DW      0xffff       ; limit 15:0

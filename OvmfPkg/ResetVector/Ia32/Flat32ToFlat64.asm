@@ -14,10 +14,11 @@ BITS    32
 ; Modified:  EAX, ECX, EDX
 ;
 Transition32FlatTo64Flat:
-    cmp     byte[TDX_WORK_AREA], 1
-    jz      TdxTransition32FlatTo64Flat
 
     OneTimeCall SetCr3ForPageTables64
+
+    cmp     byte[TDX_WORK_AREA], 1
+    jz      TdxTransition32FlatTo64Flat
 
     mov     eax, cr4
     bts     eax, 5                      ; enable PAE
@@ -72,9 +73,9 @@ EnablePaging:
 
 ;
 ; Tdx Transition from 32Flat to 64Flat
-; Tdx use the page table built in Vtf0 for quicker performance
 ;
 TdxTransition32FlatTo64Flat:
+
     mov     eax, cr4
     bts     eax, 5                      ; enable PAE
 
@@ -88,7 +89,8 @@ TdxTransition32FlatTo64Flat:
 .set_cr4:
     mov     cr4, eax
 
-    mov     ebx, ADDR_OF(TopLevelPageDirectory)
+    mov     ebx, cr3
+
     ;
     ; if we just set la57, we are ok, if using 4-level paging, adjust top-level page directory
     ;

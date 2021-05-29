@@ -346,6 +346,8 @@
   #
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageSize|0x1000|UINT64|0x5d
 
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesBase|0x0|UINT32|0x5e
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesSize|0x0|UINT32|0x5f
 
 [PcdsDynamic, PcdsDynamicEx]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent|0|UINT64|2

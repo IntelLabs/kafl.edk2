@@ -63,8 +63,7 @@ BITS    32
 ;
 ; @return         None  This routine jumps to SEC and does not return
 
-MainTd:
-%ifdef ARCH_X64
+Main32:
     ;
     ; Save EBX in EBP because EBX will be changed in ReloadFlat32
     ;
@@ -72,22 +71,9 @@ MainTd:
     OneTimeCall ReloadFlat32
 
     ;
-    ; It is of Tdx Guest
-    ; Save the Tdx info in TDX_WORK_AREA to pass to SEC phase
+    ; Init Tdx
     ;
-    mov     byte[TDX_WORK_AREA], 1
-
-    ; check 5-level paging support
-    and     ebp, 0x3f
-    cmp     ebp, 52
-    jl      NotPageLevel5
-    mov     byte[TDX_WORK_AREA_PAGELEVEL5], 1
-
-NotPageLevel5:
-    mov     DWORD[TDX_WORK_AREA_INITVP], ecx
-    mov     DWORD[TDX_WORK_AREA_INFO], ebp
-
-%endif
+    OneTimeCall  InitTdx
 
 SearchBfv:
     ;

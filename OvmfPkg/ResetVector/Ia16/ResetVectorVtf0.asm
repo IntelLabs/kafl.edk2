@@ -21,13 +21,19 @@ ALIGN   16
 ; This is required so the page tables will be 4k aligned when VTF0 is
 ; located just below 0x100000000 (4GB) in the firmware device.
 ;
-; For TDX_VIRTUAL_FIRMWARE the padding is in X64\TdxMetadata.asm.
-;
-%ifndef TDX_VIRTUAL_FIRMWARE
-  %ifdef ALIGN_TOP_TO_4K_FOR_PAGING
+%ifdef ALIGN_TOP_TO_4K_FOR_PAGING
     TIMES (0x1000 - ($ - EndOfPageTables) - 0x20) DB 0
-  %endif
 %endif
+
+;
+; This describes the offset of TdxMetadata block in Ovmf image
+;
+; GUID : e47a6535-984a-4798-865e-4685a7bf8ec2
+;
+tdxMetadataOffset:
+    DD      (OVMF_IMAGE_SIZE_IN_KB * 1024 - (fourGigabytes - TdxMetadataGuid - 16))
+    DB      0x35, 0x65, 0x7a, 0xe4, 0x4a, 0x98, 0x98, 0x47
+    DB      0x86, 0x5e, 0x46, 0x85, 0xa7, 0xbf, 0x8e, 0xc2
 
 ;
 ; Padding to ensure first guid starts at 0xffffffd0
@@ -127,15 +133,7 @@ applicationProcessorEntryPoint:
 
 ALIGN   8
 
-;
-; TDX Virtual Firmware injects metadata in VTF0.
-; The address of the metadata is injected in this location (0xffffffe8)
-;
-%ifdef TDX_VIRTUAL_FIRMWARE
-    DD      (OVMF_IMAGE_SIZE_IN_KB * 1024 - (fourGigabytes - TdxMetadataGuid - 16))
-%else
     DD      0
-%endif
 
 ;
 ; The VTF signature
@@ -154,22 +152,17 @@ resetVector:
 ;
 ; This is where the processor will begin execution
 ;
-; TDX_VIRTUAL_FIRMWARE is defined in X64/TdxMetadata.asm
-; For TDX_VIRTAUL_FIRMWARE, it is of Protected mode in ResetVector
-; Note:
-;   The distance between ResetVector and EarlyBspPmEntry should
-;   be less than 128 bytes.
-;   DO NOT ADD MORE DATA between ResetVector and EarlyBspPmEntry
+; Td guest requires the startup mode to be 32-bit protected mode while
+; the legacy VM startup mode is 16-bit real mode. To make NASM generate
+; such shared entry code that behaves correctly in both 16-bit and 32-bit
+; mode, more BITS directives are added.
 ;
     nop
-    nop
-
-%ifdef TDX_VIRTUAL_FIRMWARE
     smsw    ax
     test    al, 1
-    jnz     EarlyBspPmEntry
-%endif
-
+BITS 32
+    jnz     EarlyPmEntry
+BITS 16
     jmp     EarlyBspInitReal16
 
 ALIGN   16

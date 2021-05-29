@@ -43,6 +43,8 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesSize
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesSize
 
   gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxBase
   gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxSize

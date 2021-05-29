@@ -11,23 +11,6 @@ BITS    64
 
 %define TDX_VIRTUAL_FIRMWARE
 
-;
-; Pad the image size to 4k when page tables are in VTF0
-;
-; If the VTF0 image has page tables built in, then we need to make
-; sure the end of VTF0 is 4k above where the page tables end.
-;
-; This is required so the page tables will be 4k aligned when VTF0 is
-; located just below 0x100000000 (4GB) in the firmware device.
-;
-%ifdef TDX_VIRTUAL_FIRMWARE
-  %ifdef ALIGN_TOP_TO_4K_FOR_PAGING
-    TIMES ((0x1000 - ($ - EndOfPageTables) - (fourGigabytes - TdxPaddingEnd) % 4096)) DB 0
-  %endif
-%endif
-
-TdxPaddingEnd:
-
 ALIGN   16
 TIMES (15 - ((TdxGuidedStructureEnd - TdxGuidedStructureStart + 15) % 16)) DB 0
 
@@ -91,6 +74,14 @@ _MailBox:
   DD 0
   DQ TDX_MAILBOX_MEMORY_BASE
   DQ TDX_MAILBOX_MEMORY_SIZE
+  DD TDX_METADATA_SECTION_TYPE_TEMP_MEM
+  DD 0
+
+_PageTable:
+  DD 0
+  DD 0
+  DQ TDX_PAGE_TABLE_BASE
+  DQ TDX_PAGE_TABLE_SIZE
   DD TDX_METADATA_SECTION_TYPE_TEMP_MEM
   DD 0
 

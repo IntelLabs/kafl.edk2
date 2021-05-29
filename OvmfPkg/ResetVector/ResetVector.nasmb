@@ -48,6 +48,7 @@
   %define TD_MAILBOX_WORKAREA_OFFSET  0x10
   %define TDX_WORK_AREA (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET)
   %define TDX_WORK_AREA_PAGELEVEL5 (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 1)
+  %define TDX_WORK_AREA_PGTBL_READY (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 2)
   %define TDX_WORK_AREA_INITVP (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 8)
   %define TDX_WORK_AREA_INFO (FixedPcdGet32 (PcdTdMailboxBase) + TD_MAILBOX_WORKAREA_OFFSET + 8 + 4)
 
@@ -83,7 +84,9 @@
   %define TDX_MAILBOX_MEMORY_BASE   FixedPcdGet32(PcdTdMailboxBase)
   %define TDX_MAILBOX_MEMORY_SIZE   FixedPcdGet32(PcdTdMailboxSize)
 
-  %include "X64/PageTables.asm"
+  %define TDX_PAGE_TABLE_BASE       FixedPcdGet32(PcdOvmfSecPageTablesBase)
+  %define TDX_PAGE_TABLE_SIZE       FixedPcdGet32(PcdOvmfSecPageTablesSize) + FixedPcdGet32(PcdOvmfTdExtraPageTablesSize)
+
   %include "X64/TdxMetadata.asm"
 %endif
 
@@ -139,18 +142,20 @@
     %error "This implementation inherently depends on PcdTdHobSize"
   %endif
 
+  %include "Ia32/InitTdx.asm"
+  %include "Ia32/ReloadFlat32.asm"
   %include "Ia32/Flat32ToFlat64.asm"
   %include "Ia32/PageTables64.asm"
-  %include "Ia32/ReloadFlat32.asm"
 %endif
 
 %include "Ia16/Real16ToFlat32.asm"
+%include "Ia16/Init16.asm"
+
 %include "Main.asm"
 
   %define SEV_ES_AP_RESET_IP  FixedPcdGet32 (PcdSevEsWorkAreaBase)
   %define SEV_LAUNCH_SECRET_BASE  FixedPcdGet32 (PcdSevLaunchSecretBase)
   %define SEV_LAUNCH_SECRET_SIZE  FixedPcdGet32 (PcdSevLaunchSecretSize)
   %define OVMF_IMAGE_SIZE_IN_KB   FixedPcdGet32 (PcdOvmfImageSizeInKb)
-%include "Ia16/Init16.asm"
 %include "Ia16/ResetVectorVtf0.asm"
 
