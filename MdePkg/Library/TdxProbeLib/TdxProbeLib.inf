@@ -1,7 +1,7 @@
 ## @file
 #  Tdx Probe library instance in OvmfPkg
 #
-#  Copyright (c) 2020 - 2021, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2021, Intel Corporation. All rights reserved.<BR>
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -23,9 +23,11 @@
 [Sources]
   TdxProbeLib.c
 
+[Sources.X64]
+  X64/TdProbe.nasm
+
+[Sources.IA32]
+  Ia32/TdProbe.c
+
 [Packages]
   MdePkg/MdePkg.dec
-  OvmfPkg/OvmfPkg.dec
-
-[Pcd]
-  gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxBase
