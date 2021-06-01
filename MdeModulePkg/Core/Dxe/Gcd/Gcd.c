@@ -35,14 +35,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #define PRESENT_MEMORY_ATTRIBUTES     (EFI_RESOURCE_ATTRIBUTE_PRESENT)
 
-// TDX
-#define EXCLUSIVE_MEMORY_ATTRIBUTES   (EFI_MEMORY_UC | EFI_MEMORY_WC | \
-                                       EFI_MEMORY_WT | EFI_MEMORY_WB | \
-                                       EFI_MEMORY_WP | EFI_MEMORY_UCE)
-
-#define NONEXCLUSIVE_MEMORY_ATTRIBUTES (EFI_MEMORY_XP | EFI_MEMORY_RP | \
-                                        EFI_MEMORY_RO)
-
 //
 // Module Variables
 //
@@ -82,9 +74,6 @@ EFI_GCD_MAP_ENTRY mGcdIoSpaceMapEntryTemplate = {
   NULL,
   NULL
 };
-// TD
-#define EFI_RESOURCE_ATTRIBUTE_ENCRYPTED            0x04000000
-
 
 GCD_ATTRIBUTE_CONVERSION_ENTRY mAttributeConversionTable[] = {
   { EFI_RESOURCE_ATTRIBUTE_UNCACHEABLE,             EFI_MEMORY_UC,              TRUE  },
@@ -671,7 +660,7 @@ ConverToCpuArchAttributes (
   UINT64      CpuArchAttributes;
 
   if(gTdGuest) {
-    CpuArchAttributes = Attributes & NONEXCLUSIVE_MEMORY_ATTRIBUTES;
+    CpuArchAttributes = Attributes & EFI_MEMORY_ACCESS_MASK;
   } else {
     CpuArchAttributes = Attributes & EFI_MEMORY_ATTRIBUTE_MASK;
   }
@@ -961,7 +950,7 @@ CoreConvertSpace (
         // SetMemorySpaceAttributes() with none CPU arch attributes (for example, RUNTIME).
         //
         if(gTdGuest) {
-          Attributes |= (Entry->Attributes & (EXCLUSIVE_MEMORY_ATTRIBUTES | NONEXCLUSIVE_MEMORY_ATTRIBUTES));
+          Attributes |= (Entry->Attributes & (EFI_CACHE_ATTRIBUTE_MASK | EFI_MEMORY_ACCESS_MASK));
         } else {
           Attributes |= (Entry->Attributes & (EFI_CACHE_ATTRIBUTE_MASK | EFI_MEMORY_ATTRIBUTE_MASK));
         }
@@ -2309,9 +2298,7 @@ CoreInitializeMemoryServices (
     Attributes  = PhitResourceHob->ResourceAttribute;
     BaseAddress = PageAlignAddress (PhitHob->EfiMemoryTop);
     Length      = PageAlignLength  (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - BaseAddress);
-    if(!gTdGuest) {
-      FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
-    }
+    FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
     if (Length < MinimalMemorySizeNeeded) {
       //
       // If that range is not large enough to intialize the DXE Core, then
@@ -2327,9 +2314,7 @@ CoreInitializeMemoryServices (
         //
         BaseAddress = PageAlignAddress (ResourceHob->PhysicalStart);
         Length      = PageAlignLength  ((UINT64)((UINTN)*HobStart - BaseAddress));
-        if(!gTdGuest) {
-          FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
-        }
+        FindLargestFreeRegion (&BaseAddress, &Length, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
       }
     }
     break;
@@ -2393,9 +2378,7 @@ CoreInitializeMemoryServices (
       //
       TestedMemoryBaseAddress = PageAlignAddress (ResourceHob->PhysicalStart);
       TestedMemoryLength      = PageAlignLength  (ResourceHob->PhysicalStart + ResourceHob->ResourceLength - TestedMemoryBaseAddress);
-      if(!gTdGuest) {
-        FindLargestFreeRegion (&TestedMemoryBaseAddress, &TestedMemoryLength, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
-      }
+      FindLargestFreeRegion (&TestedMemoryBaseAddress, &TestedMemoryLength, (EFI_HOB_MEMORY_ALLOCATION *)GetFirstHob (EFI_HOB_TYPE_MEMORY_ALLOCATION));
       if (TestedMemoryLength < MinimalMemorySizeNeeded) {
         continue;
       }

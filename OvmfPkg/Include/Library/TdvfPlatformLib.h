@@ -7,8 +7,6 @@
 #include <Pi/PiHob.h>
 #include <Library/HobLib.h>
 
-#define EFI_RESOURCE_ATTRIBUTE_ENCRYPTED            0x04000000
-
 #define FW_CFG_NX_STACK_ITEM        "opt/ovmf/PcdSetNxForStack"
 #define FW_CFG_SYSTEM_STATE_ITEM    "etc/system-states"
 
