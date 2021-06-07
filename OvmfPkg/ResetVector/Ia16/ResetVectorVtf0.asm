@@ -157,12 +157,13 @@ resetVector:
 ; such shared entry code that behaves correctly in both 16-bit and 32-bit
 ; mode, more BITS directives are added.
 ;
-    nop
     smsw    ax
     test    al, 1
+    jz      .Real
 BITS 32
-    jnz     EarlyPmEntry
+    jmp     EarlyPmEntry
 BITS 16
+.Real:
     jmp     EarlyBspInitReal16
 
 ALIGN   16
