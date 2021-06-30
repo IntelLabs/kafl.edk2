@@ -71,27 +71,24 @@ NumBlocks     = 0xD0
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPageTablesSize
 
 0x006000|0x001000
-gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesSize
-
-0x007000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfLockBoxStorageBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfLockBoxStorageSize
 
-0x008000|0x001000
+0x007000|0x001000
 gEfiMdePkgTokenSpaceGuid.PcdGuidedExtractHandlerTableAddress|gUefiOvmfPkgTokenSpaceGuid.PcdGuidedExtractHandlerTableSize
 
-0x009000|0x001000
+0x008000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableSize
 
-0x00A000|0x002000
+0x009000|0x002000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbSize
 
-0x00C000|0x001000
+0x00B000|0x001000
 gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaBase|gUefiCpuPkgTokenSpaceGuid.PcdSevEsWorkAreaSize
 
-0x00D000|0x001000
+0x00C000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupSize
 
-0x00E000|0x001000
+0x00D000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxBase|gUefiOvmfPkgTokenSpaceGuid.PcdTdMailboxSize
 DATA = {
   0x00,0x00,0x00,0x00,
@@ -104,8 +101,11 @@ DATA = {
   0x00,0x00,0x00,0x00
 }
 
-0x00F000|0x001000
+0x00E000|0x001000
 gUefiOvmfPkgTokenSpaceGuid.PcdTdHobBase|gUefiOvmfPkgTokenSpaceGuid.PcdTdHobSize
+
+0x00F000|0x001000
+gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfTdExtraPageTablesSize
 
 0x010000|0x010000
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecPeiTempRamSize

@@ -84,8 +84,11 @@
   %define TDX_MAILBOX_MEMORY_BASE   FixedPcdGet32(PcdTdMailboxBase)
   %define TDX_MAILBOX_MEMORY_SIZE   FixedPcdGet32(PcdTdMailboxSize)
 
-  %define TDX_PAGE_TABLE_BASE       FixedPcdGet32(PcdOvmfSecPageTablesBase)
-  %define TDX_PAGE_TABLE_SIZE       FixedPcdGet32(PcdOvmfSecPageTablesSize) + FixedPcdGet32(PcdOvmfTdExtraPageTablesSize)
+  %define OVMF_PAGE_TABLE_BASE      FixedPcdGet32(PcdOvmfSecPageTablesBase)
+  %define OVMF_PAGE_TABLE_SIZE      FixedPcdGet32(PcdOvmfSecPageTablesSize)
+
+  %define TDX_EXTRA_PAGE_TABLE_BASE FixedPcdGet32(PcdOvmfTdExtraPageTablesBase)
+  %define TDX_EXTRA_PAGE_TABLE_SIZE FixedPcdGet32(PcdOvmfTdExtraPageTablesSize)
 
   %include "X64/TdxMetadata.asm"
 %endif
@@ -141,6 +144,8 @@
   %if (FixedPcdGet32 (PcdTdHobSize) != 0x1000)
     %error "This implementation inherently depends on PcdTdHobSize"
   %endif
+
+  %define TDX_PT_ADDR(Offset) (FixedPcdGet32 (PcdOvmfTdExtraPageTablesBase) + (Offset))
 
   %include "Ia32/InitTdx.asm"
   %include "Ia32/ReloadFlat32.asm"

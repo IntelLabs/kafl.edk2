@@ -92,11 +92,12 @@ TdxTransition32FlatTo64Flat:
     mov     ebx, cr3
 
     ;
-    ; if we just set la57, we are ok, if using 4-level paging, adjust top-level page directory
+    ; if la57 is not set, we are ok
+    ; if using 5-level paging, adjust top-level page directory
     ;
     bt      eax, 12
-    jc      .set_cr3
-    add     ebx, 0x1000
+    jnc      .set_cr3
+    mov     ebx, TDX_PT_ADDR (0)
 .set_cr3:
     mov     cr3, ebx
 
