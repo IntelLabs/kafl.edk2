@@ -173,10 +173,10 @@ ASM_PFX(TdVmCallCpuid):
        mov r12, rcx
        mov r13, rdx
 
-       tdcall_regs_preamble TDVMCALL, TDVMCALL_EXPOSE_REGS_MASK
-
        ; Save *results pointers
        push r8
+
+       tdcall_regs_preamble TDVMCALL, TDVMCALL_EXPOSE_REGS_MASK
 
        tdcall
 
@@ -192,7 +192,7 @@ ASM_PFX(TdVmCallCpuid):
        ; Retrieve *Results
        pop r8
        test r8, r8
-       jnz .no_return_data
+       jz .no_return_data
        ; Caller pass in buffer so store results r12-r15 contains eax-edx
        mov [r8 +  0], r12
        mov [r8 +  8], r13
