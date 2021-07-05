@@ -26,7 +26,7 @@
 [Sources.X64]
   AcceptPages.c
   Rtmr.c
-  TdInfo.c
+  TdReport.c
   X64/Tdcall.nasm
   X64/Tdvmcall.nasm
 
@@ -38,6 +38,6 @@
   BaseLib
   BaseMemoryLib
   DebugLib
-
+  MemoryAllocationLib
 [Pcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation
