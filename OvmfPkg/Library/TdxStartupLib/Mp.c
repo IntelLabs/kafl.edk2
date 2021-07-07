@@ -235,8 +235,8 @@ MpAcceptMemoryResourceRange (
       } else {
         StartAddress2 = PhysicalAddress + Length1;
         Length2 = (TotalLength - Length1) & ~(UINT64)ALIGNED_2MB_MASK;
-        StartAddress3 = StartAddress2 + Length2;
         Length3 = TotalLength - Length1 - Length2;
+        StartAddress3 = Length3 > 0 ? StartAddress2 + Length2 : 0;
         ASSERT (Length3 < SIZE_2MB);
       }
     }
@@ -246,6 +246,7 @@ MpAcceptMemoryResourceRange (
   DEBUG ((DEBUG_INFO, "   Part1: 0x%llx - 0x%llx\n", StartAddress1, Length1));
   DEBUG ((DEBUG_INFO, "   Part2: 0x%llx - 0x%llx\n", StartAddress2, Length2));
   DEBUG ((DEBUG_INFO, "   Part3: 0x%llx - 0x%llx\n", StartAddress3, Length3));
+  DEBUG ((DEBUG_INFO, "   Chunk: 0x%llx, Page : 0x%llx\n", AcceptChunkSize, AcceptPageSize));
 
   MpSerializeStart();
 
