@@ -47,9 +47,9 @@ ASM_PFX(_ModuleEntryPoint):
     ;
     ; Td guest flag is stored in TDX_WORK_AREA which is in Mailbox[0x10,0x20]
     ;
-    %define TDX_WORK_AREA (FixedPcdGet32 (PcdTdMailboxBase) + 0x10)
+    %define TDX_WORK_AREA (FixedPcdGet32 (PcdOvmfSecGhcbBackupBase) + 0x10)
     mov     eax, TDX_WORK_AREA
-    cmp     byte[eax], 1
+    cmp     dword[eax], 0x47584454 ; 'TDXG'
     jne     InitStack
 
     mov     rax, TDCALL_TDINFO
@@ -114,7 +114,7 @@ ParkAp:
     mov     rbp,  r9
 
 .do_wait_loop:
-    mov     rsp, FixedPcdGet32 (PcdTdMailboxBase)
+    mov     rsp, FixedPcdGet32 (PcdOvmfSecGhcbBackupBase)
 
     ;
     ; register itself in [rsp + CpuArrivalOffset]

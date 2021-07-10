@@ -38,12 +38,12 @@
 BOOLEAN  mTdxSupported = FALSE;
 
 typedef struct _TDX_WORK_AREA{
-  UINT8 TdxIsEnabled;
-  UINT8 PageLevel5; // 5 page level is supported
-  UINT8 Rsvd[6];
+  UINT32  Signature;
+  UINT8   PageLevel5; // 5 page level is supported
+  UINT8   Rsvd[3];
 
-  UINT32 TdxInitVp;
-  UINT32 Info;
+  UINT32  TdxInitVp;
+  UINT32  Info;
 }TDX_WORK_AREA;
 #endif
 
@@ -907,13 +907,13 @@ CheckTdxSupported(
   TDX_WORK_AREA *TdxWorkArea;
   UINT32        TdMailboxBase;
 
-  TdMailboxBase = FixedPcdGet32 (PcdTdMailboxBase);
+  TdMailboxBase = FixedPcdGet32 (PcdOvmfSecGhcbBackupBase);
   if (TdMailboxBase == 0) {
     return FALSE;
   }
   
   TdxWorkArea = (TDX_WORK_AREA *) ((UINTN)(TdMailboxBase + 0x10));
-  Supported = (TdxWorkArea != NULL) && (TdxWorkArea->TdxIsEnabled != 0);
+  Supported = (TdxWorkArea != NULL) && (TdxWorkArea->Signature == 0x47584454);
 
   if (Supported) {
     *TdInitVp = (VOID*)(UINTN)TdxWorkArea->TdxInitVp;

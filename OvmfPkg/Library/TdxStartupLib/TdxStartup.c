@@ -114,7 +114,7 @@ TdxStartup(
   Status = TdCall (TDCALL_TDINFO, 0,0,0, &TdReturnData);
   ASSERT (Status == EFI_SUCCESS);
   mNumOfCpus = TdReturnData.TdInfo.NumVcpus;
-  mMailBox = (VOID *)(UINTN)PcdGet32 (PcdTdMailboxBase);
+  mMailBox = (VOID *)(UINTN)PcdGet32 (PcdOvmfSecGhcbBackupBase);
 
   DEBUG ((EFI_D_INFO,
     "Tdx started with(Hob: 0x%x, Info: 0x%x, Cpus: %d, MailBox: 0x%x)\n",
@@ -251,7 +251,7 @@ TdxStartup(
     (UINT64)SecCoreData->TemporaryRamSize);
 
   BuildMemoryAllocationHob (
-    FixedPcdGet32 (PcdTdMailboxBase),
+    FixedPcdGet32 (PcdOvmfSecGhcbBackupBase),
     EFI_PAGE_SIZE,
     EfiACPIMemoryNVS
     );
