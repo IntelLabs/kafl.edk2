@@ -44,7 +44,7 @@ IoRead8 (
 {
   UINT8   Data;
 
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     Data = TdIoRead8 (Port);
     return Data;
   }
@@ -77,7 +77,7 @@ IoWrite8 (
   IN      UINT8                     Value
   )
 {
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     TdIoWrite8 (Port, Value);
     return Value;
   }
@@ -112,7 +112,7 @@ IoRead16 (
 
   ASSERT ((Port & 1) == 0);
 
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     Data = TdIoRead16 (Port);
     return Data;
   }
@@ -148,7 +148,7 @@ IoWrite16 (
 {
   ASSERT ((Port & 1) == 0);
 
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     TdIoWrite16 (Port, Value);
     return Value;
   }
@@ -184,7 +184,7 @@ IoRead32 (
 
   ASSERT ((Port & 3) == 0);
 
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     Data = TdIoRead32 (Port);
     return Data;
   }
@@ -220,7 +220,7 @@ IoWrite32 (
 {
   ASSERT ((Port & 3) == 0);
 
-  if (ProbeTdGuest ()) {
+  if (TdxIsEnabled ()) {
     TdIoWrite32 (Port, Value);
     return Value;
   }

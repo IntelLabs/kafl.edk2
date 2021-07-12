@@ -932,7 +932,7 @@ MeasureKernelBlob(
   EFI_TCG2_EVENT  *Tcg2Event;
   EFI_STATUS      Status;
 
-  if (ProbeTdGuest () == FALSE) {
+  if (TdxIsEnabled () == FALSE) {
     return EFI_SUCCESS;
   }
 
