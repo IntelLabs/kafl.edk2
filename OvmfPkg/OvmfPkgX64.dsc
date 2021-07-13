@@ -265,6 +265,7 @@
   VmTdExitLib|OvmfPkg/Library/VmTdExitLib/VmTdExitLib.inf
   TdxLib|MdePkg/Library/TdxLib/TdxLib.inf
   TdxProbeLib|MdePkg/Library/TdxProbeLib/TdxProbeLib.inf
+  TdxMpLib|OvmfPkg/Library/TdxMpLib/TdxMpLib.inf
 
 [LibraryClasses.common.SEC]
   TimerLib|OvmfPkg/Library/AcpiTimerLib/BaseRomAcpiTimerLib.inf

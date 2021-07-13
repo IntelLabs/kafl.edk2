@@ -14,86 +14,10 @@
 #include <Library/UefiCpuLib.h>
 #include <Library/TdxLib.h>
 #include <Library/SynchronizationLib.h>
+#include <Library/TdxMpLib.h>
 #include "TdxStartupInternal.h"
 
 #define ALIGNED_2MB_MASK 0x1fffff
-
-/**
-  This function will be called by BSP to wakeup APs the are spinning on mailbox
-  in protected mode
-
-  @param[in] Command          Command to send APs
-  @param[in] WakeupVector     If used, address for APs to start executing
-  @param[in] WakeArgsX        Args to pass to APs for excuting commands
-**/
-VOID
-EFIAPI
-MpSendWakeupCommand(
-  IN UINT16 Command,
-  IN UINT64 WakeupVector,
-  IN UINT64 WakeupArgs1,
-  IN UINT64 WakeupArgs2,
-  IN UINT64 WakeupArgs3,
-  IN UINT64 WakeupArgs4
-)
-{
-  volatile MP_WAKEUP_MAILBOX  *MailBox;
-
-  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox();
-  MailBox->ApicId = MP_CPU_PROTECTED_MODE_MAILBOX_APICID_INVALID;
-  MailBox->WakeUpVector = 0;
-  MailBox->Command = MpProtectedModeWakeupCommandNoop;
-  MailBox->ApicId = MP_CPU_PROTECTED_MODE_MAILBOX_APICID_BROADCAST;
-  MailBox->WakeUpVector = WakeupVector;
-  MailBox->WakeUpArgs1 = WakeupArgs1;
-  MailBox->WakeUpArgs2 = WakeupArgs2;
-  MailBox->WakeUpArgs3 = WakeupArgs3;
-  MailBox->WakeUpArgs4 = WakeupArgs4;
-  AsmCpuid (0x01, NULL, NULL, NULL, NULL);
-  MailBox->Command = Command;
-  AsmCpuid (0x01, NULL, NULL, NULL, NULL);
-  return;
-}
-
-VOID
-EFIAPI
-MpSerializeStart (
-  VOID
-  )
-{
-  volatile MP_WAKEUP_MAILBOX  *MailBox;
-  UINT32 NumOfCpus;
-
-  NumOfCpus = GetNumCpus();
-  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox();
-
-  DEBUG((DEBUG_VERBOSE, "Waiting for APs to arriving. NumOfCpus=%d, MailBox=%p\n", NumOfCpus, MailBox));
-  while (MailBox->NumCpusArriving != ( NumOfCpus -1 )) {
-    CpuPause();
-  }
-  DEBUG((DEBUG_VERBOSE, "Releasing APs\n"));
-  MailBox->NumCpusExiting = NumOfCpus;
-  InterlockedIncrement ((UINT32 *) &MailBox->NumCpusArriving);
-}
-
-VOID
-EFIAPI
-MpSerializeEnd (
-  VOID
-  )
-{
-  volatile MP_WAKEUP_MAILBOX  *MailBox;
-
-  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox();
-  DEBUG((DEBUG_VERBOSE, "Waiting for APs to finish\n"));
-  while (MailBox->NumCpusExiting != 1 ) {
-    CpuPause();
-  }
-  DEBUG((DEBUG_VERBOSE, "Restarting APs\n"));
-  MailBox->Command = MpProtectedModeWakeupCommandNoop;
-  MailBox->NumCpusArriving = 0;
-  InterlockedDecrement ((UINT32 *) &MailBox->NumCpusExiting);
-}
 
 EFI_STATUS
 EFIAPI
@@ -112,8 +36,8 @@ BspAcceptMemoryResourceRange (
 
   Status = EFI_SUCCESS;
   PhysicalAddress = StartAddress;
-  Stride = GetNumCpus() * AcceptChunkSize;
-  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox();
+  Stride = GetCpusNum () * AcceptChunkSize;
+  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetTdxMailBox();
 
   while (!EFI_ERROR(Status) && PhysicalAddress < StartAddress + Length) {
     //
@@ -175,7 +99,7 @@ MpAcceptMemoryResourceRange (
   UINT64                      Length3;
   volatile MP_WAKEUP_MAILBOX  *MailBox;
 
-  MailBox = (volatile MP_WAKEUP_MAILBOX  *)GetMailBox ();
+  MailBox = (volatile MP_WAKEUP_MAILBOX *) GetTdxMailBox ();
   AcceptChunkSize = FixedPcdGet64 (PcdTdxAcceptChunkSize);
   AcceptPageSize = FixedPcdGet64 (PcdTdxAcceptPageSize);
   TotalLength = PhysicalEnd - PhysicalAddress;
