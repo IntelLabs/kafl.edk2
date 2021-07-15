@@ -15,7 +15,7 @@ FirmwareArgsOffset                        equ       800h
 WakeupArgsRelocatedMailBox                equ       800h
 AcceptPageArgsPhysicalStart               equ       800h
 AcceptPageArgsPhysicalEnd                 equ       808h
-AcceptPageArgsAcceptSize                  equ       810h
+AcceptPageArgsChunkSize                   equ       810h
 AcceptPageArgsPageSize                    equ       818h
 CpuArrivalOffset                          equ       900h
 CpusExitingOffset                         equ       0a00h

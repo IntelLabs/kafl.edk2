@@ -273,17 +273,20 @@ ValidateHobList (
   @param[in] VmmHobList    The Hoblist pass the firmware
 
 **/
-VOID
+EFI_STATUS
 EFIAPI
 ProcessHobList (
   IN CONST VOID             *VmmHobList
   )
 {
+  EFI_STATUS                  Status;
   EFI_PEI_HOB_POINTERS        Hob;
   EFI_PHYSICAL_ADDRESS        PhysicalEnd;
   EFI_PHYSICAL_ADDRESS        PhysicalStart;
   UINT64                      Length;
   EFI_HOB_RESOURCE_DESCRIPTOR *LowMemoryResource = NULL;
+
+  Status = EFI_SUCCESS;
 
   ASSERT (VmmHobList != NULL);
   Hob.Raw = (UINT8 *) VmmHobList;
@@ -319,15 +322,23 @@ ProcessHobList (
           }
         }
 
-        MpAcceptMemoryResourceRange (
+        Status = MpAcceptMemoryResourceRange (
             Hob.ResourceDescriptor->PhysicalStart,
             PhysicalEnd);
+        if (EFI_ERROR (Status)) {
+          break;
+        }
       }
     }
     Hob.Raw = GET_NEXT_HOB (Hob);
   }
 
+  ASSERT (!EFI_ERROR (Status));
   ASSERT (LowMemoryResource != NULL);
+
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   PhysicalStart = LowMemoryResource->PhysicalStart;
   Length = LowMemoryResource->ResourceLength;
@@ -340,7 +351,6 @@ ProcessHobList (
       Length -= EFI_PAGE_SIZE;
   }
 
-
   HobConstructor (
     (VOID *) PhysicalStart,
     Length,
@@ -349,6 +359,8 @@ ProcessHobList (
     );
 
   PrePeiSetHobList ((VOID *)(UINT64)PhysicalStart);
+
+  return Status;
 }
 
 /**

@@ -92,7 +92,7 @@ TdxStartup(
   BootFv = NULL;
   SecCoreData = (EFI_SEC_PEI_HAND_OFF *) Context;
 
-  Status = TdCall (TDCALL_TDINFO, 0,0,0, &TdReturnData);
+  Status = TdCall (TDCALL_TDINFO, 0, 0, 0, &TdReturnData);
   ASSERT (Status == EFI_SUCCESS);
 
   DEBUG ((EFI_D_INFO,
@@ -115,7 +115,11 @@ TdxStartup(
   //
   // Process Hoblist for the TD
   //
-  ProcessHobList (VmmHobList);
+  Status = ProcessHobList (VmmHobList);
+  if (EFI_ERROR (Status)) {
+    ASSERT (FALSE);
+    CpuDeadLoop();
+  }
 
   //
   // ProcessLibaryConstructorList
