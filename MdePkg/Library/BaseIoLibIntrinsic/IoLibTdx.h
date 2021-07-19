@@ -8,6 +8,12 @@
 #ifndef __IOLIB_TDX_H__
 #define __IOLIB_TDX_H__
 
+BOOLEAN
+EFIAPI
+IsTdxGuest (
+  VOID
+  );
+
 UINT8
 EFIAPI
 TdIoRead8 (

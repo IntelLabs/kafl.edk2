@@ -7,7 +7,7 @@
 
 #include <Library/BaseLib.h>
 #include "BaseIoLibIntrinsicInternal.h"
-
+#include "IoLibTdx.h"
 
 BOOLEAN
 EFIAPI
