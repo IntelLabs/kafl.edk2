@@ -220,7 +220,7 @@ GetHashInfo (
   @return Size of the hash.
 **/
 UINT16
-GetHashSizeFromAlgo(
+GetHashSizeByAlgo(
   IN TPMI_ALG_HASH HashAlgo
   )
 {
@@ -246,7 +246,7 @@ ExtendEvent (
   UINT16                   DigestSize;
   EFI_HASH_INFO            *HashInfo;
 
-  DigestSize = GetHashSizeFromAlgo (HashAlg);
+  DigestSize = GetHashSizeByAlgo (HashAlg);
 
   HashInfo = GetHashInfo (HashAlg);
   if (HashInfo == NULL) {
@@ -725,7 +725,7 @@ DumpTdvfEvent2 (
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
     Print (L"    HashAlgo : 0x%04x\n", HashAlgo);
     Print (L"    Digest(%d): ", DigestIndex);
-    DigestSize = GetHashSizeFromAlgo (HashAlgo);
+    DigestSize = GetHashSizeByAlgo (HashAlgo);
     for (Index = 0; Index < DigestSize; Index++) {
       Print (L"%02x", DigestBuffer[Index]);
     }
@@ -762,7 +762,7 @@ GetPcrEvent2Size (
   HashAlgo = TcgPcrEvent2->Digest.digests[0].hashAlg;
   DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest.digests[0].digest;
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
-    DigestSize = GetHashSizeFromAlgo (HashAlgo);
+    DigestSize = GetHashSizeByAlgo (HashAlgo);
     //
     // Prepare next
     //
@@ -793,7 +793,7 @@ GetDigestFromPcrEvent2 (
   HashAlgo = TcgPcrEvent2->Digest.digests[0].hashAlg;
   DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest.digests[0].digest;
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
-    DigestSize = GetHashSizeFromAlgo (HashAlgo);
+    DigestSize = GetHashSizeByAlgo (HashAlgo);
 
     if (HashAlg == HashAlgo) {
       return DigestBuffer;
@@ -1072,7 +1072,7 @@ DumpAcpiTdxEventLog (
       DumpTcgEfiSpecIdEventStruct (TcgEfiSpecIdEventStruct);
 
       TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-      while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && (0 <= TcgPcrEvent2->PCRIndex <=5) && (TcgPcrEvent2->Digest.count ==1)) {
+      while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && ((0 <= TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->PCRIndex) <=4) && (TcgPcrEvent2->Digest.count ==1)) {
         if ((RegisterIndex == PCR_INDEX_ALL) || (RegisterIndex == EventHdr->PCRIndex)) {
          // Print(L"Start Dump Tcg2 TDVF Event\n");
           DumpTdvfEvent2 (TcgPcrEvent2);
@@ -1094,7 +1094,7 @@ DumpAcpiTdxEventLog (
         ZeroMem (&HashDigest, sizeof(HashDigest));
 
         TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-       while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && (0 <= TcgPcrEvent2->PCRIndex <=5) && (TcgPcrEvent2->Digest.count ==1)) {
+       while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && ((0 <= TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->PCRIndex) <=4) && (TcgPcrEvent2->Digest.count ==1)) {
           if ((RegisterIndex == TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->EventType != EV_NO_ACTION)) {
             DigestBuffer = GetDigestFromPcrEvent2 (TcgPcrEvent2, HashAlg);
             if (DigestBuffer != NULL) {
