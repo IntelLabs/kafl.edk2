@@ -66,7 +66,7 @@ ASM_PFX(SevNoRepIo):
 ;------------------------------------------------------------------------------
 ;  VOID
 ;  EFIAPI
-;  IoReadFifo8 (
+;  SevIoReadFifo8 (
 ;    IN  UINTN                 Port,
 ;    IN  UINTN                 Size,
 ;    OUT VOID                  *Buffer

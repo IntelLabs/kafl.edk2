@@ -40,9 +40,11 @@
   Ia32/IoFifoSev.nasm
 
 [Sources.X64]
+  IoLibSevFifo.h
   IoLibGcc.c    | GCC
   IoLibMsc.c    | MSFT
   IoLib.c
+  IoLibSevFifo.c
   IoLibInternalTdx.c
   X64/IoFifoSev.nasm
 

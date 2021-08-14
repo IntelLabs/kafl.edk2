@@ -365,4 +365,3 @@ MmioWrite64 (
 
   return Value;
 }
-
