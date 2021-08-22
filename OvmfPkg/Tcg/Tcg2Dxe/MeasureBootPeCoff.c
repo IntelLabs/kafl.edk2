@@ -82,7 +82,7 @@ Tcg2DxeImageRead (
 
   Notes: PE/COFF image is checked by BasePeCoffLib PeCoffLoaderGetImageInfo().
 
-  @param[in]  PCRIndex       TPM PCR index
+  @param[in]  RtmrIndex      Rtmr index
   @param[in]  ImageAddress   Start address of image buffer.
   @param[in]  ImageSize      Image size
   @param[out] DigestList     Digest list of this image.
@@ -93,7 +93,7 @@ Tcg2DxeImageRead (
 **/
 EFI_STATUS
 MeasurePeImageAndExtend (
-  IN  UINT32                    PCRIndex,
+  IN  UINT32                    RtmrIndex,
   IN  EFI_PHYSICAL_ADDRESS      ImageAddress,
   IN  UINTN                     ImageSize,
   OUT TPML_DIGEST_VALUES        *DigestList
@@ -391,7 +391,7 @@ MeasurePeImageAndExtend (
   //
   // 17.  Finalize the SHA hash.
   //
-  Status = HashCompleteAndExtend (HashHandle, PCRIndex, NULL, 0, DigestList);
+  Status = HashCompleteAndExtend (HashHandle, RtmrIndex, NULL, 0, DigestList);
   if (EFI_ERROR (Status)) {
     goto Finish;
   }

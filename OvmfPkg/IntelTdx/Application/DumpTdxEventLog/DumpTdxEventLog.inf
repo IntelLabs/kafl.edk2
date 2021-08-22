@@ -53,5 +53,5 @@
   gEfiAcpiTableGuid
 
 [Protocols]
-  gTdTcg2ProtocolGuid                            ## CONSUMES
-  gEfiTcg2FinalEventsTableGuid
+  gEfiTdProtocolGuid                            ## CONSUMES
+  gEfiTdFinalEventsTableGuid

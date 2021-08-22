@@ -178,35 +178,41 @@ TdxMeasureAndLogData (
   )
 {
   EFI_STATUS                Status;
-  EFI_TCG2_PROTOCOL         *Tcg2Protocol;
-  EFI_TCG2_EVENT            *Tcg2Event;
+  EFI_TD_PROTOCOL           *TdProtocol;
+  EFI_TD_EVENT              *TdEvent;
+  UINT32                    MrIndex;
 
   DEBUG ((DEBUG_INFO, "TdxMeasureAndLogData\n"));
-  Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) &Tcg2Protocol);
+  Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &TdProtocol);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Tcg2Event = (EFI_TCG2_EVENT *) AllocateZeroPool (LogLen + sizeof (EFI_TCG2_EVENT));
-  if(Tcg2Event == NULL) {
+  Status = TdProtocol->MapPcrToMrIndex (TdProtocol, Index, &MrIndex);
+  if (EFI_ERROR (Status)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  TdEvent = (EFI_TD_EVENT *) AllocateZeroPool (LogLen + sizeof (EFI_TD_EVENT));
+  if(TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Tcg2Event->Size = (UINT32) LogLen + sizeof (EFI_TCG2_EVENT) - sizeof (Tcg2Event->Event);
-  Tcg2Event->Header.HeaderSize  = sizeof (EFI_TCG2_EVENT_HEADER);
-  Tcg2Event->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
-  Tcg2Event->Header.PCRIndex      = Index;
-  Tcg2Event->Header.EventType     = EventType;
-  CopyMem (&Tcg2Event->Event[0], EventLog, LogLen);
+  TdEvent->Size = (UINT32) LogLen + sizeof (EFI_TD_EVENT) - sizeof (TdEvent->Event);
+  TdEvent->Header.HeaderSize  = sizeof (EFI_TD_EVENT_HEADER);
+  TdEvent->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
+  TdEvent->Header.MrIndex       = MrIndex;
+  TdEvent->Header.EventType     = EventType;
+  CopyMem (&TdEvent->Event[0], EventLog, LogLen);
 
-  Status = Tcg2Protocol->HashLogExtendEvent (
-                           Tcg2Protocol,
+  Status = TdProtocol->HashLogExtendEvent (
+                           TdProtocol,
                            0,
                            (EFI_PHYSICAL_ADDRESS) (UINTN) HashData,
                            HashDataLen,
-                           Tcg2Event
+                           TdEvent
                            );
-  FreePool (Tcg2Event);
+  FreePool (TdEvent);
 
   return Status;
 }

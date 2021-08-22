@@ -81,31 +81,6 @@ HashUpdate (
 }
 
 /**
-    MRTD     => PCR[0]
-    RTMR[0]  => PCR[1,7]
-    RTMR[1]  => PCR[2,3,4,5,6]
-    RTMR[2]  => PCR[8~15]
-    RTMR[3]  => NA
-
-**/
-UINT8 GetMappedRtmrIndex(UINT32 PCRIndex)
-{
-  UINT8  RtmrIndex;
-
-  ASSERT (PCRIndex <= 16 && PCRIndex >= 0);
-  RtmrIndex = 0;
-  if (PCRIndex == 1 || PCRIndex == 7) {
-    RtmrIndex = 0;
-  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
-    RtmrIndex = 1;
-  } else if (PCRIndex >= 8 && PCRIndex <= 15) {
-    RtmrIndex = 2;
-  }
-
-  return RtmrIndex;
-}
-
-/**
   Hash sequence complete and extend to PCR.
 
   @param HashHandle    Hash handle.
@@ -146,15 +121,19 @@ HashCompleteAndExtend (
   Status = TdExtendRtmr (
              (UINT32*)DigestList->digests[0].digest.sha384,
              SHA384_DIGEST_SIZE,
-             GetMappedRtmrIndex(PcrIndex)
+             (UINT8)PcrIndex
              );
+
+  DEBUG((DEBUG_INFO, "Td: HashAndExtend: RTMR = %d, DataPtr = %p, DataLen = 0x%x, Status = %r\n",
+    PcrIndex, DataToHash, DataToHashLen, Status));
+  
   return Status;
 }
 
 /**
-  Hash data and extend to PCR.
+  Hash data and extend to RTMR.
 
-  @param PcrIndex      PCR to be extended.
+  @param MrIndex       RTMR to be extended.
   @param DataToHash    Data to be hashed.
   @param DataToHashLen Data size.
   @param DigestList    Digest list.
@@ -180,9 +159,6 @@ HashAndExtend (
   HashStart (&HashHandle);
   HashUpdate (HashHandle, DataToHash, DataToHashLen);
   Status = HashCompleteAndExtend (HashHandle, PcrIndex, NULL, 0, DigestList);
-
-  DEBUG((DEBUG_INFO, "Td: HashAndExtend: %d, %p, 0x%x, %r\n",
-    PcrIndex, DataToHash, DataToHashLen, Status));
 
   return Status;
 }

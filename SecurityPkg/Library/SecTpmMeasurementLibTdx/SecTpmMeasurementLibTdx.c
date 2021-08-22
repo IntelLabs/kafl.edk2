@@ -10,7 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #include <IndustryStandard/Tpm20.h>
 #include <IndustryStandard/UefiTcgPlatform.h>
-#include <Guid/TcgEventHob.h>
+#include <Guid/TdEventHob.h>
 #include <Guid/MeasuredFvHob.h>
 #include <Guid/TpmInstance.h>
 #include <Library/DebugLib.h>
@@ -30,7 +30,30 @@ typedef struct {
 
 #pragma pack()
 
-extern UINT32 GetMappedRtmrIndex(UINT32 PCRIndex);
+/**
+    MRTD     => PCR[0]
+    RTMR[0]  => PCR[1,7]
+    RTMR[1]  => PCR[2,3,4,5,6]
+    RTMR[2]  => PCR[8~15]
+    RTMR[3]  => NA
+
+**/
+UINT8 GetMappedRtmrIndex(UINT32 PCRIndex)
+{
+  UINT8  RtmrIndex;
+
+  ASSERT (PCRIndex <= 16 && PCRIndex >= 0);
+  RtmrIndex = 0;
+  if (PCRIndex == 1 || PCRIndex == 7) {
+    RtmrIndex = 0;
+  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
+    RtmrIndex = 1;
+  } else if (PCRIndex >= 8 && PCRIndex <= 15) {
+    RtmrIndex = 2;
+  }
+
+  return RtmrIndex;
+}
 
 /**
   Tpm measure and log data, and extend the measurement result into a specific PCR.
@@ -86,7 +109,7 @@ TpmMeasureAndLogData (
   // which is limited to a SHA384 digest list
   //
   EventHobData = BuildGuidHob (
-    &gTcgEvent2EntryHobGuid,
+    &gTdEventEntryHobGuid,
     sizeof(TcgPcrEvent2->PCRIndex) + sizeof(TcgPcrEvent2->EventType) +
     sizeof(TDX_DIGEST_VALUE) +
     sizeof(TcgPcrEvent2->EventSize) + LogLen);
@@ -101,9 +124,10 @@ TpmMeasureAndLogData (
   //
   // Initialize PcrEvent data now
   //
-  CopyMem(Ptr, &PcrIndex, sizeof(TCG_PCRINDEX));
-  Ptr += sizeof(TCG_PCRINDEX);
-  CopyMem(Ptr, &EventType, sizeof(TCG_EVENTTYPE));
+  RtmrIndex++;
+  CopyMem(Ptr, &RtmrIndex, sizeof (UINT32));
+  Ptr += sizeof (UINT32);
+  CopyMem(Ptr, &EventType, sizeof (TCG_EVENTTYPE));
   Ptr += sizeof(TCG_EVENTTYPE);
 
   DigestBuffer = Ptr;

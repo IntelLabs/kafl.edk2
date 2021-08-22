@@ -23,7 +23,7 @@
 #include <Protocol/Tdx.h>
 #include <Protocol/QemuAcpiTableNotify.h>
 
-EFI_TCG2_PROTOCOL               *mTdTcg2Protocol = NULL;
+EFI_TD_PROTOCOL                 *mTdProtocol = NULL;
 EFI_HANDLE                      mQemuAcpiHandle  = NULL;
 QEMU_ACPI_TABLE_NOTIFY_PROTOCOL mAcpiNotifyProtocol;
 
@@ -63,44 +63,50 @@ MeasureQemuFwCfgAcpi(
   IN UINTN                 CfgDataLength
 )
 {
-  EFI_TCG2_EVENT  *Tcg2Event;
   EFI_STATUS      Status;
+  EFI_TD_EVENT    *TdEvent;
+  UINT32          MrIndex;
 
   if (TdxIsEnabled () == FALSE) {
     return EFI_SUCCESS;
   }
 
-  if (mTdTcg2Protocol == NULL) {
-    Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) &mTdTcg2Protocol);
+  if (mTdProtocol == NULL) {
+    Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &mTdProtocol);
     if (EFI_ERROR (Status)) {
       //
       // TdTcg2 protocol is not installed.
       //
-      DEBUG ((EFI_D_ERROR, "MesureQemuFwCfgAcpi - TdTcg2 - %r\n", Status));
+      DEBUG ((DEBUG_ERROR, "MesureQemuFwCfgAcpi - EFI_TD_PROTOCOL is not installed. - %r\n", Status));
       return EFI_NOT_FOUND;
     }
   }
 
-  Tcg2Event = AllocateZeroPool (EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(Tcg2Event->Event));
-  if (Tcg2Event == NULL) {
+  Status = mTdProtocol->MapPcrToMrIndex (mTdProtocol, 1, &MrIndex);
+  if (EFI_ERROR (Status)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event));
+  if (TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Tcg2Event->Size = EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(Tcg2Event->Event);
-  Tcg2Event->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
-  Tcg2Event->Header.PCRIndex = 1;
-  Tcg2Event->Header.HeaderSize = sizeof (EFI_TCG2_EVENT_HEADER);
-  Tcg2Event->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
-  CopyMem (&Tcg2Event->Event[0], EventData, EventSize);
+  TdEvent->Size = EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(TdEvent->Event);
+  TdEvent->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
+  TdEvent->Header.MrIndex = MrIndex;
+  TdEvent->Header.HeaderSize = sizeof (EFI_TCG2_EVENT_HEADER);
+  TdEvent->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
+  CopyMem (&TdEvent->Event[0], EventData, EventSize);
 
-  Status = mTdTcg2Protocol->HashLogExtendEvent (mTdTcg2Protocol,
+  Status = mTdProtocol->HashLogExtendEvent (mTdProtocol,
                                               0,
                                               CfgDataBase,
                                               CfgDataLength,
-                                              Tcg2Event
+                                              TdEvent
                                               );
 
-  FreePool (Tcg2Event);
+  FreePool (TdEvent);
 
   DEBUG ((DEBUG_INFO, "MeasureQemuFwCfg %s, %r\n", EventData, Status));
 

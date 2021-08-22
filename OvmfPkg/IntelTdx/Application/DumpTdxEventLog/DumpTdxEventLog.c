@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <PiDxe.h>
 
 #include <Protocol/Tcg2Protocol.h>
+#include <Protocol/Tdx.h>
 
 #include <Library/DebugLib.h>
 #include <Library/DebugPrintErrorLevelLib.h>
@@ -39,8 +40,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define TD_REPORT_DATA_SIZE     64
 
 typedef struct {
-  EFI_TCG2_EVENT_LOG_FORMAT  LogFormat;
-} EFI_TCG2_EVENT_INFO_STRUCT;
+  EFI_TD_EVENT_LOG_FORMAT  LogFormat;
+} EFI_TD_EVENT_INFO_STRUCT;
 
 
 typedef
@@ -126,7 +127,6 @@ InternalDumpData (
     Print (L"%02x", (UINTN)Data[Index]);
   }
 }
-
 
 
 /**
@@ -714,7 +714,7 @@ DumpTdvfEvent2 (
   UINT32                    EventSize;
   UINT8                     *EventBuffer;
 
-  Print (L"  Event:\n");
+  Print (L">>Event:\n");
   Print (L"    TD Register Index  - %d\n", TcgPcrEvent2->PCRIndex);
   Print (L"    EventType - 0x%08x\n", TcgPcrEvent2->EventType);
   Print (L"    DigestCount: 0x%08x\n", TcgPcrEvent2->Digest.count);
@@ -742,6 +742,7 @@ DumpTdvfEvent2 (
   Print (L"    EventSize - 0x%08x\n", EventSize);
   EventBuffer = DigestBuffer + sizeof(TcgPcrEvent2->EventSize);
   ParseEventData (TcgPcrEvent2->EventType, EventBuffer, EventSize);
+  Print (L"\n");
 }
 
 
@@ -839,10 +840,10 @@ GetTcgSpecIdDigestSize (
 **/
 VOID
 DumpTdxEventLog (
-  IN EFI_TCG2_EVENT_LOG_FORMAT   EventLogFormat,
+  IN EFI_TD_EVENT_LOG_FORMAT     EventLogFormat,
   IN EFI_PHYSICAL_ADDRESS        EventLogLocation,
   IN EFI_PHYSICAL_ADDRESS        EventLogLastEntry,
-  IN EFI_TCG2_FINAL_EVENTS_TABLE *FinalEventsTable,
+  IN EFI_TD_FINAL_EVENTS_TABLE   *FinalEventsTable,
   IN UINT32                      RegisterIndex,
   IN BOOLEAN                     CalculateExpected
   )
@@ -869,7 +870,7 @@ DumpTdxEventLog (
   Print (L"EventLogLocation: (0x%lx)\n", EventLogLocation);
 
   if (!CalculateExpected) {
-    Print (L"Tcg2Event:\n");
+    Print (L"TdEvent:\n");
     EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
     DumpTdvfEvent (EventHdr);
     TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
@@ -899,7 +900,7 @@ DumpTdxEventLog (
           TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
         }
       }
-    Print (L"Tcg2Event end\n");
+    Print (L"TdEvent end\n");
   } else {
     EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
     TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
@@ -919,7 +920,7 @@ DumpTdxEventLog (
         }
           TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
       }
-      Print (L"Tcg2Event Calculated:\n");
+      Print (L"TdEvent Calculated:\n");
       Print (L"    RegisterIndex  - %d\n", RegisterIndex);
       Print (L"    Digest    - ");
       for (Index = 0; Index < digestSize[AlgoIndex].digestSize; Index++) {
@@ -1043,7 +1044,7 @@ DumpAcpiTableHeader (
 
 VOID
 DumpAcpiTdxEventLog (
-  IN EFI_TCG2_EVENT_LOG_FORMAT   EventLogFormat,
+  IN EFI_TD_EVENT_LOG_FORMAT     EventLogFormat,
   IN EFI_PHYSICAL_ADDRESS        EventLogLocation,
   IN UINT64                      Laml,
   IN UINT64                      RegisterIndex
@@ -1074,14 +1075,14 @@ DumpAcpiTdxEventLog (
       TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
       while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && ((0 <= TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->PCRIndex) <=4) && (TcgPcrEvent2->Digest.count ==1)) {
         if ((RegisterIndex == PCR_INDEX_ALL) || (RegisterIndex == EventHdr->PCRIndex)) {
-         // Print(L"Start Dump Tcg2 TDVF Event\n");
+         // Print(L"Start Dump Td Event\n");
           DumpTdvfEvent2 (TcgPcrEvent2);
-         // Print(L"Finish Dump Tcg2 TDVF Event\n");
+         // Print(L"Finish Dump Td Event\n");
 
         }
         TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
       }
-    Print (L"Tcg2Event end\n");
+    Print (L"TdEvent end\n");
       
     for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++){
       EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
@@ -1103,7 +1104,7 @@ DumpAcpiTdxEventLog (
           }
           TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
         }
-        Print (L"Tcg2Event Calculated:\n");
+        Print (L"TdEvent Calculated:\n");
         Print (L"    RegisterIndex  - %d\n", RegisterIndex);
         Print (L"    Digest    - ");
         for (Index = 0; Index < digestSize[AlgoIndex].digestSize; Index++) {
@@ -1363,13 +1364,13 @@ UefiMain (
   LIST_ENTRY                       *ParamPackage;
   CHAR16                           *IndexName;
   BOOLEAN                          CalculateExpected;
-  EFI_TCG2_PROTOCOL                *Tcg2Protocol;
+  EFI_TD_PROTOCOL                  *TdProtocol;
   EFI_PHYSICAL_ADDRESS             EventLogLocation;
   EFI_PHYSICAL_ADDRESS             EventLogLastEntry;
   BOOLEAN                          EventLogTruncated;
-  UINT32                            Index;
-  EFI_TCG2_BOOT_SERVICE_CAPABILITY ProtocolCapability;
-  EFI_TCG2_FINAL_EVENTS_TABLE      *FinalEventsTable;
+  UINT32                           Index;
+  EFI_TD_BOOT_SERVICE_CAPABILITY   ProtocolCapability;
+  EFI_TD_FINAL_EVENTS_TABLE        *FinalEventsTable;
   Status = ShellCommandLineParse (mParamList, &ParamPackage, NULL, TRUE);
   if (EFI_ERROR(Status)) {
     Print(L"ERROR: Incorrect command line.\n");
@@ -1454,53 +1455,53 @@ UefiMain (
   //
   // Get Tcg2
   //
-  TdxTcg2Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) &Tcg2Protocol);
+  TdxTcg2Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &TdProtocol);
   if (EFI_ERROR (TdxTcg2Status)) {
-    Print (L"ERROR: Locate TDVF Tcg2Protocol - %r\n", TdxTcg2Status);
+    Print (L"ERROR: Locate EfiTdProtocol - %r\n", TdxTcg2Status);
     return TdxTcg2Status;
   }else{
-      Print (L"Locate EFI Tcg2Protocol -%r\n", TdxTcg2Status);
+      Print (L"Locate EFI TdProtocol -%r\n", TdxTcg2Status);
     }
 
   ZeroMem (&ProtocolCapability, sizeof(ProtocolCapability));
   ProtocolCapability.Size = sizeof(ProtocolCapability);
-  Status = Tcg2Protocol->GetCapability (
-                           Tcg2Protocol,
+  Status = TdProtocol->GetCapability (
+                           TdProtocol,
                            &ProtocolCapability
                            );
   if (EFI_ERROR (Status)) {
-    Print (L"ERROR: Tcg2Protocol->GetCapability - %r\n", Status);
+    Print (L"ERROR: TdProtocol->GetCapability - %r\n", Status);
     return Status;
   }
-  Status = Tcg2Protocol->GetEventLog (
-                               Tcg2Protocol,
-                               EFI_TCG2_EVENT_LOG_FORMAT_TCG_2,
+  Status = TdProtocol->GetEventLog (
+                               TdProtocol,
+                               EFI_TD_EVENT_LOG_FORMAT_TCG_2,
                                &EventLogLocation,
                                &EventLogLastEntry,
                                &EventLogTruncated
                                );
   if (EFI_ERROR (Status)) {
-    Print (L"ERROR: Tcg2Protocol->GetEventLog(0x%x) - %r\n", EFI_TCG2_EVENT_LOG_FORMAT_TCG_2, Status);
+    Print (L"ERROR: TdProtocol->GetEventLog(0x%x) - %r\n", EFI_TD_EVENT_LOG_FORMAT_TCG_2, Status);
     }
   if (EventLogTruncated) {
         Print (L"WARNING: EventLogTruncated\n");
     }
 
   FinalEventsTable = NULL;
-  EfiGetSystemConfigurationTable (&gEfiTcg2FinalEventsTableGuid, (VOID **)&FinalEventsTable);
+  EfiGetSystemConfigurationTable (&gEfiTdFinalEventsTableGuid, (VOID **)&FinalEventsTable);
 
 
-      //
-      // DumpLog
-      //
-      if (TdxTcg2Status == EFI_SUCCESS){
-          if (CalculateExpected && (Index == PCR_INDEX_ALL)) {
-          for (Index = 0; Index <= MAX_TDX_REG_INDEX; Index++) {
-          DumpTdxEventLog (EFI_TCG2_EVENT_LOG_FORMAT_TCG_2, EventLogLocation, EventLogLastEntry, FinalEventsTable, Index, CalculateExpected);
-          }
-        } else {
-          DumpTdxEventLog (EFI_TCG2_EVENT_LOG_FORMAT_TCG_2, EventLogLocation, EventLogLastEntry, FinalEventsTable, Index, CalculateExpected);
-        }
+  //
+  // DumpLog
+  //
+  if (TdxTcg2Status == EFI_SUCCESS){
+    if (CalculateExpected && (Index == PCR_INDEX_ALL)) {
+      for (Index = 0; Index <= MAX_TDX_REG_INDEX; Index++) {
+        DumpTdxEventLog (EFI_TD_EVENT_LOG_FORMAT_TCG_2, EventLogLocation, EventLogLastEntry, FinalEventsTable, Index, CalculateExpected);
       }
+    } else {
+      DumpTdxEventLog (EFI_TD_EVENT_LOG_FORMAT_TCG_2, EventLogLocation, EventLogLastEntry, FinalEventsTable, Index, CalculateExpected);
+    }
+  }
   return EFI_SUCCESS;
 }

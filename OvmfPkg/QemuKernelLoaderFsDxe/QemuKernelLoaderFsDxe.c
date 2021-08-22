@@ -30,7 +30,7 @@
 #include <Protocol/Tcg2Protocol.h>
 #include <Protocol/Tdx.h>
 
-EFI_TCG2_PROTOCOL               *mTdTcg2Protocol = NULL;
+EFI_TD_PROTOCOL               *mTdProtocol = NULL;
 
 //
 // Static data that hosts the fw_cfg blobs and serves file requests.
@@ -929,44 +929,51 @@ MeasureKernelBlob(
   IN UINTN                 BlobSize
 )
 {
-  EFI_TCG2_EVENT  *Tcg2Event;
   EFI_STATUS      Status;
+  UINT32          MrIndex;
+  EFI_TD_EVENT    *TdEvent;
+
 
   if (TdxIsEnabled () == FALSE) {
     return EFI_SUCCESS;
   }
 
-  if (mTdTcg2Protocol == NULL) {
-    Status = gBS->LocateProtocol (&gTdTcg2ProtocolGuid, NULL, (VOID **) &mTdTcg2Protocol);
+  if (mTdProtocol == NULL) {
+    Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &mTdProtocol);
     if (EFI_ERROR (Status)) {
       //
-      // TdTcg2 protocol is not installed.
+      // EFI_TD_PROTOCOL protocol is not installed.
       //
-      DEBUG ((EFI_D_ERROR, "%a: TdTcg2 protocol is not installed.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a: EFI_TD_PROTOCOL protocol is not installed.\n", __FUNCTION__));
       return EFI_NOT_FOUND;
     }
   }
 
-  Tcg2Event = AllocateZeroPool (EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(Tcg2Event->Event));
-  if (Tcg2Event == NULL) {
+  Status = mTdProtocol->MapPcrToMrIndex (mTdProtocol, 4, &MrIndex);
+  if (EFI_ERROR (Status)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event));
+  if (TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  Tcg2Event->Size = EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(Tcg2Event->Event);
-  Tcg2Event->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
-  Tcg2Event->Header.PCRIndex = 4;
-  Tcg2Event->Header.HeaderSize = sizeof (EFI_TCG2_EVENT_HEADER);
-  Tcg2Event->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
-  CopyMem (&Tcg2Event->Event[0], EventData, EventSize);
+  TdEvent->Size = EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event);
+  TdEvent->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
+  TdEvent->Header.MrIndex   = MrIndex;
+  TdEvent->Header.HeaderSize = sizeof (EFI_TCG2_EVENT_HEADER);
+  TdEvent->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
+  CopyMem (&TdEvent->Event[0], EventData, EventSize);
 
-  Status = mTdTcg2Protocol->HashLogExtendEvent (mTdTcg2Protocol,
-                                              0,
-                                              (EFI_PHYSICAL_ADDRESS) (UINTN) BlobBase,
-                                              BlobSize,
-                                              Tcg2Event
-                                              );
+  Status = mTdProtocol->HashLogExtendEvent (mTdProtocol,
+                                            0,
+                                            (EFI_PHYSICAL_ADDRESS) (UINTN) BlobBase,
+                                            BlobSize,
+                                            TdEvent
+                                            );
 
-  FreePool (Tcg2Event);
+  FreePool (TdEvent);
 
   return Status;
 }

@@ -69,13 +69,12 @@
   gEfiEventExitBootServicesGuid                      ## CONSUMES            ## Event
   gEventExitBootServicesFailedGuid                   ## SOMETIMES_CONSUMES  ## Event
 
-  gTcgEvent2EntryHobGuid                             ## SOMETIMES_CONSUMES  ## HOB
+  gTdEventEntryHobGuid                               ## SOMETIMES_CONSUMES  ## HOB
   gTcg800155PlatformIdEventHobGuid                   ## SOMETIMES_CONSUMES  ## HOB
-  #gTdTcg2ProtocolGuid
 
 [Protocols]
-  gTdTcg2ProtocolGuid                                ## PRODUCES
-  gEfiTcg2FinalEventsTableGuid                       ## PRODUCES
+  gEfiTdProtocolGuid                                    ## PRODUCES
+  gEfiTdFinalEventsTableGuid                         ## PRODUCES
   gEfiMpServiceProtocolGuid                          ## SOMETIMES_CONSUMES
   gEfiVariableWriteArchProtocolGuid                  ## NOTIFY
   gEfiResetNotificationProtocolGuid                  ## CONSUMES

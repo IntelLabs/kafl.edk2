@@ -40,5 +40,8 @@
   TdxLib
   HashLib
 
+[Guids]
+  gTdEventEntryHobGuid                               ## SOMETIMES_CONSUMES  ## HOB
+
 [Protocols]
 
