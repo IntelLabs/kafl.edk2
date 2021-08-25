@@ -96,7 +96,7 @@ EFI_HASH_INFO  mHashInfo[] = {
   {TPM_ALG_SHA256, Sha256GetContextSize, Sha256Init, Sha256Update, Sha256Final, },
   {TPM_ALG_SHA384, Sha384GetContextSize, Sha384Init, Sha384Update, Sha384Final,}
 };
-#define PCR_INDEX_ALL 0xFFFFFFFF
+#define INDEX_ALL 0xFFFFFFFF
 
 SHELL_PARAM_ITEM mParamList[] = {
   {L"-I",   TypeValue},
@@ -689,7 +689,7 @@ DumpTdvfEvent (
   UINTN                     Index;
 
   Print (L"  Event:\n");
-  Print (L"   TD Register Index  - %d\n", EventHdr->PCRIndex);
+  Print (L"   Mr Index  - %d\n", EventHdr->PCRIndex);
   Print (L"    EventType - 0x%08x\n", EventHdr->EventType);
   Print (L"    Digest    - ");
   for (Index = 0; Index < sizeof(TCG_DIGEST); Index++) {
@@ -702,7 +702,7 @@ DumpTdvfEvent (
 
 VOID
 DumpTdvfEvent2 (
-  IN TCG_PCR_EVENT2        *TcgPcrEvent2
+  IN TD_EVENT        *TdMrEvent
   )
 {
   UINTN                     Index;
@@ -715,13 +715,13 @@ DumpTdvfEvent2 (
   UINT8                     *EventBuffer;
 
   Print (L">>Event:\n");
-  Print (L"    TD Register Index  - %d\n", TcgPcrEvent2->PCRIndex);
-  Print (L"    EventType - 0x%08x\n", TcgPcrEvent2->EventType);
-  Print (L"    DigestCount: 0x%08x\n", TcgPcrEvent2->Digest.count);
+  Print (L"    Mr Index  - %d\n", TdMrEvent->MrIndex);
+  Print (L"    EventType - 0x%08x\n", TdMrEvent->EventType);
+  Print (L"    DigestCount: 0x%08x\n", TdMrEvent->Digests.count);
 
-  DigestCount = TcgPcrEvent2->Digest.count;
-  HashAlgo = TcgPcrEvent2->Digest.digests[0].hashAlg;
-  DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest.digests[0].digest;
+  DigestCount = TdMrEvent->Digests.count;
+  HashAlgo = TdMrEvent->Digests.digests[0].hashAlg;
+  DigestBuffer = (UINT8 *)&TdMrEvent->Digests.digests[0].digest;
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
     Print (L"    HashAlgo : 0x%04x\n", HashAlgo);
     Print (L"    Digest(%d): ", DigestIndex);
@@ -738,17 +738,17 @@ DumpTdvfEvent2 (
   }
   DigestBuffer = DigestBuffer - sizeof(TPMI_ALG_HASH);
 
-  CopyMem (&EventSize, DigestBuffer, sizeof(TcgPcrEvent2->EventSize));
+  CopyMem (&EventSize, DigestBuffer, sizeof(TdMrEvent->EventSize));
   Print (L"    EventSize - 0x%08x\n", EventSize);
-  EventBuffer = DigestBuffer + sizeof(TcgPcrEvent2->EventSize);
-  ParseEventData (TcgPcrEvent2->EventType, EventBuffer, EventSize);
+  EventBuffer = DigestBuffer + sizeof(TdMrEvent->EventSize);
+  ParseEventData (TdMrEvent->EventType, EventBuffer, EventSize);
   Print (L"\n");
 }
 
 
 UINTN
-GetPcrEvent2Size (
-  IN TCG_PCR_EVENT2        *TcgPcrEvent2
+GetMrEventSize (
+  IN TD_EVENT        *TdMrEvent
   )
 {
   UINT32                    DigestIndex;
@@ -759,9 +759,9 @@ GetPcrEvent2Size (
   UINT32                    EventSize;
   UINT8                     *EventBuffer;
 
-  DigestCount = TcgPcrEvent2->Digest.count;
-  HashAlgo = TcgPcrEvent2->Digest.digests[0].hashAlg;
-  DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest.digests[0].digest;
+  DigestCount = TdMrEvent->Digests.count;
+  HashAlgo = TdMrEvent->Digests.digests[0].hashAlg;
+  DigestBuffer = (UINT8 *)&TdMrEvent->Digests.digests[0].digest;
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
     DigestSize = GetHashSizeByAlgo (HashAlgo);
     //
@@ -772,15 +772,15 @@ GetPcrEvent2Size (
   }
   DigestBuffer = DigestBuffer - sizeof(TPMI_ALG_HASH);
 
-  CopyMem (&EventSize, DigestBuffer, sizeof(TcgPcrEvent2->EventSize));
-  EventBuffer = DigestBuffer + sizeof(TcgPcrEvent2->EventSize);
+  CopyMem (&EventSize, DigestBuffer, sizeof(TdMrEvent->EventSize));
+  EventBuffer = DigestBuffer + sizeof(TdMrEvent->EventSize);
 
-  return (UINTN)EventBuffer + EventSize - (UINTN)TcgPcrEvent2;
+  return (UINTN)EventBuffer + EventSize - (UINTN)TdMrEvent;
 }
 
 UINT8 *
-GetDigestFromPcrEvent2 (
-  IN TCG_PCR_EVENT2            *TcgPcrEvent2,
+GetDigestFromMrEvent (
+  IN TD_EVENT            *TdMrEvent,
   IN TPMI_ALG_HASH             HashAlg
   )
 {
@@ -790,9 +790,9 @@ GetDigestFromPcrEvent2 (
   UINT32                    DigestSize;
   UINT8                     *DigestBuffer;
 
-  DigestCount = TcgPcrEvent2->Digest.count;
-  HashAlgo = TcgPcrEvent2->Digest.digests[0].hashAlg;
-  DigestBuffer = (UINT8 *)&TcgPcrEvent2->Digest.digests[0].digest;
+  DigestCount = TdMrEvent->Digests.count;
+  HashAlgo = TdMrEvent->Digests.digests[0].hashAlg;
+  DigestBuffer = (UINT8 *)&TdMrEvent->Digests.digests[0].digest;
   for (DigestIndex = 0; DigestIndex < DigestCount; DigestIndex++) {
     DigestSize = GetHashSizeByAlgo (HashAlgo);
 
@@ -848,8 +848,8 @@ DumpTdxEventLog (
   IN BOOLEAN                     CalculateExpected
   )
 {
-  TCG_PCR_EVENT_HDR                *EventHdr;
-  TCG_PCR_EVENT2                   *TcgPcrEvent2;
+  TCG_PCR_EVENT_HDR                *TcgEventHdr;
+  TD_EVENT                   *TdMrEvent;
   TCG_EfiSpecIDEventStruct         *TcgEfiSpecIdEventStruct;
   UINT32                           numberOfAlgorithms;
   TCG_EfiSpecIdEventAlgorithmSize  *digestSize;
@@ -871,17 +871,17 @@ DumpTdxEventLog (
 
   if (!CalculateExpected) {
     Print (L"TdEvent:\n");
-    EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
-    DumpTdvfEvent (EventHdr);
-    TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
+    TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
+    DumpTdvfEvent (TcgEventHdr);
+    TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
     DumpTcgEfiSpecIdEventStruct (TcgEfiSpecIdEventStruct);
 
-    TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-    while ((UINTN)TcgPcrEvent2 <= EventLogLastEntry) {
-        if ((RegisterIndex == PCR_INDEX_ALL) || (RegisterIndex == EventHdr->PCRIndex)) {
-          DumpTdvfEvent2 (TcgPcrEvent2);
+    TdMrEvent = (TD_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
+    while ((UINTN)TdMrEvent <= EventLogLastEntry) {
+        if ((RegisterIndex == INDEX_ALL) || (RegisterIndex == TdMrEvent->MrIndex)) {
+          DumpTdvfEvent2 (TdMrEvent);
         }
-        TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
+        TdMrEvent = (TD_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
       }
 
     if (FinalEventsTable == NULL) {
@@ -891,34 +891,34 @@ DumpTdxEventLog (
         Print (L"  Version:           (0x%x)\n", FinalEventsTable->Version);
         Print (L"  NumberOfEvents:    (0x%x)\n", FinalEventsTable->NumberOfEvents);
 
-        TcgPcrEvent2 = (TCG_PCR_EVENT2 *)(UINTN)(FinalEventsTable + 1);
+        TdMrEvent = (TD_EVENT *)(UINTN)(FinalEventsTable + 1);
 
         for (NumberOfEvents = 0; NumberOfEvents < FinalEventsTable->NumberOfEvents; NumberOfEvents++) {
-          if ((RegisterIndex == PCR_INDEX_ALL) || (RegisterIndex == EventHdr->PCRIndex)) {
-            DumpTdvfEvent2 (TcgPcrEvent2);
+          if ((RegisterIndex == INDEX_ALL) || (RegisterIndex == TdMrEvent->MrIndex)) {
+            DumpTdvfEvent2 (TdMrEvent);
           }
-          TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
+          TdMrEvent = (TD_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
         }
       }
     Print (L"TdEvent end\n");
   } else {
-    EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
-    TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
+    TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
+    TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
 
     numberOfAlgorithms = GetTcgSpecIdNumberOfAlgorithms (TcgEfiSpecIdEventStruct);
     digestSize = GetTcgSpecIdDigestSize (TcgEfiSpecIdEventStruct);
     for (AlgoIndex = 0; AlgoIndex < numberOfAlgorithms; AlgoIndex++) {
       HashAlg = digestSize[AlgoIndex].algorithmId;
       ZeroMem (&HashDigest, sizeof(HashDigest));
-      TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-      while ((UINTN)TcgPcrEvent2 <= EventLogLastEntry) {
-        if ((RegisterIndex == TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->EventType != EV_NO_ACTION)) {
-          DigestBuffer = GetDigestFromPcrEvent2 (TcgPcrEvent2, HashAlg);
+      TdMrEvent = (TD_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
+      while ((UINTN)TdMrEvent <= EventLogLastEntry) {
+        if ((RegisterIndex == TdMrEvent->MrIndex) && (TdMrEvent->EventType != EV_NO_ACTION)) {
+          DigestBuffer = GetDigestFromMrEvent (TdMrEvent, HashAlg);
           if (DigestBuffer != NULL) {
             ExtendEvent (HashAlg, HashDigest.sha384, DigestBuffer);
           }
         }
-          TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
+          TdMrEvent = (TD_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
       }
       Print (L"TdEvent Calculated:\n");
       Print (L"    RegisterIndex  - %d\n", RegisterIndex);
@@ -1050,8 +1050,8 @@ DumpAcpiTdxEventLog (
   IN UINT64                      RegisterIndex
   )
 {
-  TCG_PCR_EVENT_HDR                *EventHdr;
-  TCG_PCR_EVENT2                   *TcgPcrEvent2;
+  TCG_PCR_EVENT_HDR                *TcgEventHdr;
+  TD_EVENT                   *TdMrEvent;
   TCG_EfiSpecIDEventStruct         *TcgEfiSpecIdEventStruct;
   UINT32                           numberOfAlgorithms;
   TCG_EfiSpecIdEventAlgorithmSize  *digestSize;
@@ -1067,26 +1067,26 @@ DumpAcpiTdxEventLog (
 
   Print (L"EventLogFormat: (0x%x)\n", EventLogFormat);
   Print (L"EventLogLocation: (0x%lx)\n", EventLogLocation);
-      EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
-      DumpTdvfEvent (EventHdr);
-      TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
+      TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
+      DumpTdvfEvent (TcgEventHdr);
+      TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
       DumpTcgEfiSpecIdEventStruct (TcgEfiSpecIdEventStruct);
 
-      TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-      while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && ((0 <= TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->PCRIndex) <=4) && (TcgPcrEvent2->Digest.count ==1)) {
-        if ((RegisterIndex == PCR_INDEX_ALL) || (RegisterIndex == EventHdr->PCRIndex)) {
+      TdMrEvent = (TD_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
+      while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((0 <= TdMrEvent->MrIndex) && (TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
+        if ((RegisterIndex == INDEX_ALL) || (RegisterIndex == TdMrEvent->MrIndex)) {
          // Print(L"Start Dump Td Event\n");
-          DumpTdvfEvent2 (TcgPcrEvent2);
+          DumpTdvfEvent2 (TdMrEvent);
          // Print(L"Finish Dump Td Event\n");
 
         }
-        TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
+        TdMrEvent = (TD_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
       }
     Print (L"TdEvent end\n");
       
     for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++){
-      EventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
-      TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(EventHdr + 1);
+      TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
+      TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
 
       numberOfAlgorithms = GetTcgSpecIdNumberOfAlgorithms (TcgEfiSpecIdEventStruct);
       digestSize = GetTcgSpecIdDigestSize (TcgEfiSpecIdEventStruct);
@@ -1094,15 +1094,15 @@ DumpAcpiTdxEventLog (
         HashAlg = digestSize[AlgoIndex].algorithmId;
         ZeroMem (&HashDigest, sizeof(HashDigest));
 
-        TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-       while ((UINTN)TcgPcrEvent2 <=(EventLogLocation+ (Laml-1)) && ((0 <= TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->PCRIndex) <=4) && (TcgPcrEvent2->Digest.count ==1)) {
-          if ((RegisterIndex == TcgPcrEvent2->PCRIndex) && (TcgPcrEvent2->EventType != EV_NO_ACTION)) {
-            DigestBuffer = GetDigestFromPcrEvent2 (TcgPcrEvent2, HashAlg);
+        TdMrEvent = (TD_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
+       while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((0 <= TdMrEvent->MrIndex) && (TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
+          if ((RegisterIndex == TdMrEvent->MrIndex) && (TdMrEvent->EventType != EV_NO_ACTION)) {
+            DigestBuffer = GetDigestFromMrEvent (TdMrEvent, HashAlg);
             if (DigestBuffer != NULL) {
               ExtendEvent (HashAlg, HashDigest.sha1, DigestBuffer);
             }
           }
-          TcgPcrEvent2 = (TCG_PCR_EVENT2 *)((UINTN)TcgPcrEvent2 + GetPcrEvent2Size (TcgPcrEvent2));
+          TdMrEvent = (TD_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
         }
         Print (L"TdEvent Calculated:\n");
         Print (L"    RegisterIndex  - %d\n", RegisterIndex);
@@ -1330,15 +1330,15 @@ PrintUsage (
   Print (
     L"DumpTdxEventLog in EFI Shell Environment.\n"
     L"\n"
-    L"usage: DumpTdxEventLog [-I <TD Register Index>] [-E]\n"
+    L"usage: DumpTdxEventLog [-I <Mr Index>] [-E]\n"
     L"usage: DumpTdxEventLog [-A]\n"
     L"usage: DumpTdxEventLog [-R]\n"
     );
   Print (
-    L"  -I   - TD Registrer Index, the valid value is 0-4 (case sensitive)\n"
+    L"  -I   - TD Registrer Index, the valid value is 0-5 (case sensitive)\n"
     L"  -E   - Print expected RTMR values and RTMR Values get from TdReport\n"
-    L"  -A   - Dump Tdx Event log from the location in ACPI table, Print expected RTMR values and RTMR Values get from TdReport\n"
-    L"  -R   - Dump RTMR[0]-RTMR[4] & MRTD value from TdReport\n"
+    L"  -A   - Dump Tdx Event log from the location in ACPI table, Print expected RTMR values and RTMR values get from TdReport\n"
+    L"  -R   - Dump RTMR[0]-RTMR[3] & MRTD value from TdReport\n"
     );
   return;
 }
@@ -1432,19 +1432,19 @@ UefiMain (
   //
   IndexName = (CHAR16 *)ShellCommandLineGetValue(ParamPackage, L"-I");
   if (IndexName == NULL) {
-    Index = PCR_INDEX_ALL;
+    Index = INDEX_ALL;
   } else {
     if (StrCmp (IndexName, L"ALL") == 0) {
-      Index = PCR_INDEX_ALL;
+      Index = INDEX_ALL;
     } else {
       Index = (UINT32)StrDecimalToUintn (IndexName);
       if (Index > MAX_TDX_REG_INDEX) {
-        Print (L"ERROR: TD Register Index too large (%d)!\n", Index);
+        Print (L"ERROR: Mr Index too large (%d)!\n", Index);
         return EFI_NOT_FOUND;
       }
     }
   }
-  Print(L"Parameter -I: PcrIndex = 0x%x\n", Index);
+  Print(L"Parameter -I: MrIndex = 0x%x\n", Index);
   //
   // If we need calculate expected value
   //
@@ -1495,7 +1495,7 @@ UefiMain (
   // DumpLog
   //
   if (TdxTcg2Status == EFI_SUCCESS){
-    if (CalculateExpected && (Index == PCR_INDEX_ALL)) {
+    if (CalculateExpected && (Index == INDEX_ALL)) {
       for (Index = 0; Index <= MAX_TDX_REG_INDEX; Index++) {
         DumpTdxEventLog (EFI_TD_EVENT_LOG_FORMAT_TCG_2, EventLogLocation, EventLogLastEntry, FinalEventsTable, Index, CalculateExpected);
       }
