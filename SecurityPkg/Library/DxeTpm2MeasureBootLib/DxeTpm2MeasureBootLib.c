@@ -268,6 +268,9 @@ Tcg2MeasureGptTable (
     PartitionEntry = (EFI_PARTITION_ENTRY *)((UINT8 *)PartitionEntry + PrimaryHeader->SizeOfPartitionEntry);
   }
 
+  TdEvent = NULL;
+  Tcg2Event = NULL;
+
   //
   // Prepare Data for Measurement (TdProtocol and Tcg2Protocol)
   //
@@ -403,6 +406,7 @@ Tcg2MeasurePeImage (
 
   Status        = EFI_UNSUPPORTED;
   ImageLoad     = NULL;
+  TdEvent       = NULL;
 
   Tcg2Protocol = MeasureBootProtocols->Tcg2Protocol;
   TdProtocol = MeasureBootProtocols->TdProtocol;
