@@ -432,7 +432,7 @@ TransferHobList (
       PhysicalStart     = Hob.ResourceDescriptor->PhysicalStart;
 
       if (ResourceType == EFI_RESOURCE_SYSTEM_MEMORY) {
-        ResourceAttribute |= EFI_RESOURCE_ATTRIBUTE_PRESENT | EFI_RESOURCE_ATTRIBUTE_INITIALIZED;
+        ResourceAttribute |= EFI_RESOURCE_ATTRIBUTE_PRESENT | EFI_RESOURCE_ATTRIBUTE_INITIALIZED | EFI_RESOURCE_ATTRIBUTE_TESTED;
 
         //
         // Set type of systme memory less than TDX_PARTIAL_ACCEPTED_MEM_SIZE to
@@ -440,14 +440,13 @@ TransferHobList (
         //
         if (AccumulateAccepted >= mTdxAcceptMemSize) {
           ResourceType = EFI_RESOURCE_MEMORY_UNACCEPTED;
-          ResourceAttribute &= ~(EFI_RESOURCE_ATTRIBUTE_TESTED | EFI_RESOURCE_ATTRIBUTE_ENCRYPTED);
+          ResourceAttribute &= ~EFI_RESOURCE_ATTRIBUTE_ENCRYPTED;
         } else {
           //
           // Judge if the whole memory is accepted.
           //
           if (AccumulateAccepted + ResourceLength <= mTdxAcceptMemSize) {
             AccumulateAccepted += ResourceLength;
-            ResourceAttribute  |= EFI_RESOURCE_ATTRIBUTE_TESTED;
             if (PhysicalStart + ResourceLength <= BASE_4GB) {
               ResourceAttribute |= EFI_RESOURCE_ATTRIBUTE_ENCRYPTED;
             }
@@ -476,7 +475,7 @@ TransferHobList (
             PhysicalStart = PhysicalStart + ResourceLength;
             ResourceLength = Hob.ResourceDescriptor->ResourceLength - ResourceLength;
             ResourceType = EFI_RESOURCE_MEMORY_UNACCEPTED;
-            ResourceAttribute &= ~(EFI_RESOURCE_ATTRIBUTE_TESTED | EFI_RESOURCE_ATTRIBUTE_ENCRYPTED);
+            ResourceAttribute &= ~EFI_RESOURCE_ATTRIBUTE_ENCRYPTED;
           }
         }
       }
