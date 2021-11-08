@@ -113,6 +113,11 @@ MpAcceptMemoryResourceRange (
   Length2 = 0;
   Length3 = 0;
 
+  if (AcceptPageSize != SIZE_4KB && AcceptPageSize != SIZE_2MB) {
+    ASSERT (FALSE);
+    AcceptPageSize = SIZE_4KB;
+  }
+
   if (AcceptPageSize == SIZE_4KB || TotalLength <= SIZE_2MB) {
     //
     // if total length is less than 2M, then we accept pages in 4k

@@ -42,6 +42,7 @@
   DEFINE TDX_EMULATION_ENABLE    = FALSE
   DEFINE TDX_SUPPORT             = TRUE
   DEFINE TDX_MEM_PARTIAL_ACCEPT  = 0
+  DEFINE TDX_ACCEPT_PAGE_SIZE    = 4K
 
   # Network definition
   #
@@ -610,10 +611,21 @@
 !if $(TDX_IGNORE_VE_HLT) == TRUE
   gUefiOvmfPkgTokenSpaceGuid.PcdIgnoreVeHalt|TRUE
 !endif
+
+!if $(TDX_ACCEPT_PAGE_SIZE) == 4K
   # Accept chunk size - 32M
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptChunkSize|0x2000000
   # Accept page size - 4k
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageSize|0x1000
+!else
+!if $(TDX_ACCEPT_PAGE_SIZE) == 2M
+  # Accept chunk size - 32M
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptChunkSize|0x2000000
+  # Accept page size - 2M
+  gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPageSize|0x200000
+!endif
+!endif
+
   # Accept memory size.
   gUefiOvmfPkgTokenSpaceGuid.PcdTdxAcceptPartialMemorySize|$(TDX_MEM_PARTIAL_ACCEPT)
 
