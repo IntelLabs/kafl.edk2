@@ -14,7 +14,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/HashLib.h>
 #include <Library/TdxLib.h>
 #include <Library/TdxProbeLib.h>
-#include <Protocol/Tdx.h>
+#include <Protocol/CcMeasurement.h>
 #include "HashLibBaseCryptoRouterCommon.h"
 
 #define TDX_HASH_COUNT  1

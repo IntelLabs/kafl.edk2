@@ -41,7 +41,5 @@
   HashLib
 
 [Guids]
-  gTdEventEntryHobGuid                               ## SOMETIMES_CONSUMES  ## HOB
-
-[Protocols]
+  gCcEventEntryHobGuid                               ## SOMETIMES_CONSUMES  ## HOB
 

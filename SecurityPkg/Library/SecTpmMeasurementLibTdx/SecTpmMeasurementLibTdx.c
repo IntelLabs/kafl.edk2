@@ -109,7 +109,7 @@ TpmMeasureAndLogData (
   // which is limited to a SHA384 digest list
   //
   EventHobData = BuildGuidHob (
-    &gTdEventEntryHobGuid,
+    &gCcEventEntryHobGuid,
     sizeof(TcgPcrEvent2->PCRIndex) + sizeof(TcgPcrEvent2->EventType) +
     sizeof(TDX_DIGEST_VALUE) +
     sizeof(TcgPcrEvent2->EventSize) + LogLen);
