@@ -28,9 +28,9 @@
 #include <Protocol/SimpleFileSystem.h>
 #include <Library/TdxProbeLib.h>
 #include <Protocol/Tcg2Protocol.h>
-#include <Protocol/Tdx.h>
+#include <Protocol/CcMeasurement.h>
 
-EFI_TD_PROTOCOL               *mTdProtocol = NULL;
+EFI_CC_MEASUREMENT_PROTOCOL               *mTdProtocol = NULL;
 
 //
 // Static data that hosts the fw_cfg blobs and serves file requests.
@@ -931,7 +931,7 @@ MeasureKernelBlob(
 {
   EFI_STATUS      Status;
   UINT32          MrIndex;
-  EFI_TD_EVENT    *TdEvent;
+  EFI_CC_EVENT    *TdEvent;
 
 
   if (TdxIsEnabled () == FALSE) {
@@ -939,7 +939,7 @@ MeasureKernelBlob(
   }
 
   if (mTdProtocol == NULL) {
-    Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &mTdProtocol);
+    Status = gBS->LocateProtocol (&gEfiCcMeasurementProtocolGuid, NULL, (VOID **) &mTdProtocol);
     if (EFI_ERROR (Status)) {
       //
       // EFI_TD_PROTOCOL protocol is not installed.
@@ -954,12 +954,12 @@ MeasureKernelBlob(
     return EFI_INVALID_PARAMETER;
   }
 
-  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event));
+  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_CC_EVENT) - sizeof(TdEvent->Event));
   if (TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
-  TdEvent->Size = EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event);
+  TdEvent->Size = EventSize + sizeof (EFI_CC_EVENT) - sizeof(TdEvent->Event);
   TdEvent->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
   TdEvent->Header.MrIndex   = MrIndex;
   TdEvent->Header.HeaderSize = sizeof (EFI_TCG2_EVENT_HEADER);
