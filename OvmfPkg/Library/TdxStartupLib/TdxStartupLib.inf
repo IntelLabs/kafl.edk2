@@ -70,7 +70,6 @@
   gEfiHobMemoryAllocStackGuid
   gUefiOvmfPkgTdxPlatformGuid
   gEfiMemoryTypeInformationGuid
-  gTdEventEntryHobGuid
   gPcdDataBaseHobGuid
 
 [Pcd]
