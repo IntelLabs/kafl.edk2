@@ -20,10 +20,10 @@
 #include <IndustryStandard/Acpi.h>
 #include <Library/TdxProbeLib.h>
 #include <Protocol/Tcg2Protocol.h>
-#include <Protocol/Tdx.h>
+#include <Protocol/CcMeasurement.h>
 #include <Protocol/QemuAcpiTableNotify.h>
 
-EFI_TD_PROTOCOL                 *mTdProtocol = NULL;
+EFI_CC_MEASUREMENT_PROTOCOL                 *mTdProtocol = NULL;
 EFI_HANDLE                      mQemuAcpiHandle  = NULL;
 QEMU_ACPI_TABLE_NOTIFY_PROTOCOL mAcpiNotifyProtocol;
 
@@ -64,7 +64,7 @@ MeasureQemuFwCfgAcpi(
 )
 {
   EFI_STATUS      Status;
-  EFI_TD_EVENT    *TdEvent;
+  EFI_CC_EVENT    *TdEvent;
   UINT32          MrIndex;
 
   if (TdxIsEnabled () == FALSE) {
@@ -72,7 +72,7 @@ MeasureQemuFwCfgAcpi(
   }
 
   if (mTdProtocol == NULL) {
-    Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &mTdProtocol);
+    Status = gBS->LocateProtocol (&gEfiCcMeasurementProtocolGuid, NULL, (VOID **) &mTdProtocol);
     if (EFI_ERROR (Status)) {
       //
       // TdTcg2 protocol is not installed.
@@ -87,7 +87,7 @@ MeasureQemuFwCfgAcpi(
     return EFI_INVALID_PARAMETER;
   }
 
-  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event));
+  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_CC_EVENT) - sizeof(TdEvent->Event));
   if (TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }

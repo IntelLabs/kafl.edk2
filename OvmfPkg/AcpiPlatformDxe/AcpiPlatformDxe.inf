@@ -57,7 +57,7 @@
   gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
   gEfiFirmwareVolume2ProtocolGuid               # PROTOCOL SOMETIMES_CONSUMED
   gEfiPciIoProtocolGuid                         # PROTOCOL SOMETIMES_CONSUMED
-  gEfiTdProtocolGuid                               # PROTOCOL SOMETIMES_CONSUMES
+  gEfiCcMeasurementProtocolGuid                               # PROTOCOL SOMETIMES_CONSUMES
   gQemuAcpiTableNotifyProtocolGuid              # PROTOCOL PRODUCES
 
 [Guids]
