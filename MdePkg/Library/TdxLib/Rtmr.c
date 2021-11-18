@@ -16,53 +16,10 @@
 #include <IndustryStandard/Tdx.h>
 
 #define RTMR_COUNT                  4
-#define TD_EXTEND_BUFFER_LEN        (64 + 64)
+#define TD_EXTEND_BUFFER_LEN        (64 + 48)
 #define EXTEND_BUFFER_ADDRESS_MASK  0x3f
 
-
-#pragma pack(16)
-typedef struct {
-  UINT8   Buffer[TD_EXTEND_BUFFER_LEN];
-} TDX_EXTEND_BUFFER;
-#pragma pack()
-
-UINT8               *mExtendBufferAddress = NULL;
-TDX_EXTEND_BUFFER   mExtendBuffer;
-
-/**
-  TD.RTMR.EXTEND requires 64B-aligned guest physical address of
-  48B-extension data. In runtime we walk thru the Buffer to find
-  out a 64B-aligned start address.
-
-  @return Start address of the extend buffer
-
-**/
-UINT8 *
-EFIAPI
-GetExtendBuffer (
-  VOID
-  )
-{
-  UINT8     *ExtendBufferAddress;
-  UINT64    Gap;
-
-  if (mExtendBufferAddress != NULL) {
-    return mExtendBufferAddress;
-  }
-
-  ExtendBufferAddress = mExtendBuffer.Buffer;
-
-  Gap = 0x40 - ((UINT64)(UINTN)ExtendBufferAddress & EXTEND_BUFFER_ADDRESS_MASK);
-  mExtendBufferAddress = (UINT8*)((UINT64)(UINTN)ExtendBufferAddress + Gap);
-
-  DEBUG ((DEBUG_VERBOSE, "ExtendBufferAddress: 0x%p, Gap: 0x%x\n", ExtendBufferAddress, Gap));
-  DEBUG ((DEBUG_VERBOSE, "mExtendBufferAddress: 0x%p\n", mExtendBufferAddress));
-
-  ASSERT (mExtendBufferAddress + 64 <= ExtendBufferAddress + TD_EXTEND_BUFFER_LEN);
-
-  return mExtendBufferAddress;
-}
-
+UINT8   TDX_EXTEND_BUFFER[TD_EXTEND_BUFFER_LEN];
 
 /**
   This function extends one of the RTMR measurement register
@@ -95,7 +52,9 @@ TdExtendRtmr (
   ASSERT (Index >= 0 && Index < RTMR_COUNT);
   ASSERT (DataLen == SHA384_DIGEST_SIZE);
 
-  ExtendBuffer = GetExtendBuffer();
+  ExtendBuffer = ALIGN_POINTER (TDX_EXTEND_BUFFER, 64);
+  ASSERT (((UINTN)ExtendBuffer & 0x3f) == 0 );
+  ASSERT ((UINTN)ExtendBuffer + 48 <= (UINTN)TDX_EXTEND_BUFFER + TD_EXTEND_BUFFER_LEN);
   ASSERT (ExtendBuffer != NULL);
   ZeroMem (ExtendBuffer, SHA384_DIGEST_SIZE);
   CopyMem (ExtendBuffer, Data, SHA384_DIGEST_SIZE);
