@@ -25,7 +25,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/TdxProbeLib.h>
 #include <Protocol/Tcg2Protocol.h>
-#include <Protocol/Tdx.h>
+#include <Protocol/CcMeasurement.h>
 
 
 #pragma pack (1)
@@ -41,7 +41,7 @@ typedef struct {
 } KERNEL_VENMEDIA_FILE_DEVPATH;
 #pragma pack ()
 
-EFI_TD_PROTOCOL                 *mTdProtocol = NULL;
+EFI_CC_MEASUREMENT_PROTOCOL                 *mTdProtocol = NULL;
 #define DIRECT_BOOT_COMMANDLINE "DirectBoot Command Line"
 #define DIRECT_BOOT_INITRD      "DirectBoot Initrd"
 #define DIRECT_BOOT_KERNEL      "DirectBoot Kernel"
@@ -113,14 +113,14 @@ MeasureQemuFwCfgAcpi(
 {
   EFI_STATUS      Status;
   UINT32          MrIndex;
-  EFI_TD_EVENT    *TdEvent;
+  EFI_CC_EVENT    *TdEvent;
 
   if (TdxIsEnabled () == FALSE) {
     return EFI_SUCCESS;
   }
 
   if (mTdProtocol == NULL) {
-    Status = gBS->LocateProtocol (&gEfiTdProtocolGuid, NULL, (VOID **) &mTdProtocol);
+    Status = gBS->LocateProtocol (&gEfiCcMeasurementProtocolGuid, NULL, (VOID **) &mTdProtocol);
     if (EFI_ERROR (Status)) {
       //
       // TdTcg2 protocol is not installed.
@@ -135,7 +135,7 @@ MeasureQemuFwCfgAcpi(
     return EFI_INVALID_PARAMETER;
   }
 
-  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_TD_EVENT) - sizeof(TdEvent->Event));
+  TdEvent = AllocateZeroPool (EventSize + sizeof (EFI_CC_EVENT) - sizeof(TdEvent->Event));
   if (TdEvent == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
@@ -143,7 +143,7 @@ MeasureQemuFwCfgAcpi(
   TdEvent->Size = EventSize + sizeof (EFI_TCG2_EVENT) - sizeof(TdEvent->Event);
   TdEvent->Header.EventType = EV_PLATFORM_CONFIG_FLAGS;
   TdEvent->Header.MrIndex = MrIndex;
-  TdEvent->Header.HeaderSize = sizeof (EFI_TD_EVENT_HEADER);
+  TdEvent->Header.HeaderSize = sizeof (EFI_CC_EVENT_HEADER);
   TdEvent->Header.HeaderVersion = EFI_TCG2_EVENT_HEADER_VERSION;
   CopyMem (&TdEvent->Event[0], EventData, EventSize);
 
