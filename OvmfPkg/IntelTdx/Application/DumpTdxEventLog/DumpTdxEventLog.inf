@@ -51,7 +51,7 @@
 
 [Guids]
   gEfiAcpiTableGuid
+  gEfiCcFinalEventsTableGuid
 
 [Protocols]
-  gEfiTdProtocolGuid                            ## CONSUMES
-  gEfiTdFinalEventsTableGuid
+  gEfiCcMeasurementProtocolGuid                            ## CONSUMES
