@@ -285,16 +285,19 @@ SetPageTablePoolReadOnly (
   //
   Address = Address & PAGE_TABLE_POOL_ALIGN_MASK;
 
+  LevelShift[0] = 0;
   LevelShift[1] = PAGING_L1_ADDRESS_SHIFT;
   LevelShift[2] = PAGING_L2_ADDRESS_SHIFT;
   LevelShift[3] = PAGING_L3_ADDRESS_SHIFT;
   LevelShift[4] = PAGING_L4_ADDRESS_SHIFT;
 
+  LevelMask[0] = 0;
   LevelMask[1] = PAGING_4K_ADDRESS_MASK_64;
   LevelMask[2] = PAGING_2M_ADDRESS_MASK_64;
   LevelMask[3] = PAGING_1G_ADDRESS_MASK_64;
   LevelMask[4] = PAGING_1G_ADDRESS_MASK_64;
 
+  LevelSize[0] = 0;
   LevelSize[1] = SIZE_4KB;
   LevelSize[2] = SIZE_2MB;
   LevelSize[3] = SIZE_1GB;
