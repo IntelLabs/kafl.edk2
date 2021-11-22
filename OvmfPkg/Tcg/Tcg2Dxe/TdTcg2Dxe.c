@@ -842,7 +842,7 @@ TcgCommLogEvent (
   CC_EVENT_HDR           *CcEventHdr;
 
   CcEventHdr = (CC_EVENT_HDR *) NewEventHdr;
-  DEBUG ((DEBUG_INFO, "Td: Try to log event. Index = %d, EventType = 0x%x\n", CcEventHdr->MrIndex, CcEventHdr->EventType));
+  DEBUG ((DEBUG_VERBOSE, "Td: Try to log event. Index = %d, EventType = 0x%x\n", CcEventHdr->MrIndex, CcEventHdr->EventType));
 
   if (NewEventSize > MAX_ADDRESS -  NewEventHdrSize) {
     return EFI_OUT_OF_RESOURCES;
@@ -899,7 +899,6 @@ TcgCommLogEvent (
   EventLogAreaStruct->LastEvent = (UINT8 *)(UINTN)EventLogAreaStruct->Lasa + EventLogAreaStruct->EventLogSize;
   EventLogAreaStruct->EventLogSize += NewLogSize;
   
-  DEBUG ((DEBUG_INFO, "It is CC Event\n"));
   CopyMem (EventLogAreaStruct->LastEvent, NewEventHdr, NewEventHdrSize);
   CopyMem (
     EventLogAreaStruct->LastEvent + NewEventHdrSize,
@@ -911,12 +910,10 @@ TcgCommLogEvent (
 }
 
 /**
-    MRTD     => PCR[0]
     RTMR[0]  => PCR[1,7]
-    RTMR[1]  => PCR[2,3,4,5,6]
+    RTMR[1]  => PCR[2,3,4,5]
     RTMR[2]  => PCR[8~15]
     RTMR[3]  => NA
-
 **/
 UINT32
 EFIAPI
@@ -926,16 +923,17 @@ MapPcrToMrIndex (
 {
   UINT32  MrIndex;
 
-  if (PCRIndex > 16) {
+  if (PCRIndex > 16 || PCRIndex == 6 || PCRIndex == 0) {
+    ASSERT (FALSE);
     return INVALID_RTMR_INDEX;
   }
 
   MrIndex = 0;
   if (PCRIndex == 1 || PCRIndex == 7) {
     MrIndex = 0;
-  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
+  } else if (PCRIndex > 1 && PCRIndex < 6) {
     MrIndex = 1;
-  } else if (PCRIndex >= 8 && PCRIndex <= 15) {
+  } else if (PCRIndex > 7 && PCRIndex < 16) {
     MrIndex = 2;
   }
 
@@ -954,7 +952,7 @@ TdMapPcrToMrIndex (
     return EFI_INVALID_PARAMETER;
   }
     
-  if (PCRIndex > 16) {
+  if (PCRIndex > 16 || PCRIndex == 0 || PCRIndex == 6) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1182,7 +1180,9 @@ TdxDxeLogHashEvent (
 
   ZeroMem (&CcEvent, sizeof(CcEvent));
   //
-  // FIXME explain why MrIndex is added by 1
+  // The index of event log is designed as below:
+  //   0  : MRTD
+  //   1-4: RTMR[0-3]
   //
   CcEvent.MrIndex = NewEventHdr->MrIndex + 1;
   CcEvent.EventType = NewEventHdr->EventType;
@@ -1855,7 +1855,7 @@ ReadAndMeasureSecureVariable (
   )
 {
   return ReadAndMeasureVariable (
-           MapPcrToMrIndex (7),    // FIXME what's the value of RTMR Index should be?
+           MapPcrToMrIndex (7),
            EV_EFI_VARIABLE_DRIVER_CONFIG,
            VarName,
            VendorGuid,
@@ -1963,7 +1963,7 @@ MeasureAllSecureVariables (
   Status = GetVariable2 (EFI_IMAGE_SECURITY_DATABASE2, &gEfiImageSecurityDatabaseGuid, &Data, &DataSize);
   if (!EFI_ERROR(Status)) {
     Status = MeasureVariable (
-               MapPcrToMrIndex (7),  // FIXME what's the Rtmr Index should be here?
+               MapPcrToMrIndex (7),
                EV_EFI_VARIABLE_DRIVER_CONFIG,
                EFI_IMAGE_SECURITY_DATABASE2,
                &gEfiImageSecurityDatabaseGuid,
