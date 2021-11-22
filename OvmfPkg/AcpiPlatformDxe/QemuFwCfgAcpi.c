@@ -108,8 +108,6 @@ MeasureQemuFwCfgAcpi(
 
   FreePool (TdEvent);
 
-  DEBUG ((DEBUG_INFO, "MeasureQemuFwCfg %s, %r\n", EventData, Status));
-
   return Status;
 }
 
@@ -461,18 +459,9 @@ ProcessCmdAllocate (
   QemuFwCfgSelectItem (FwCfgItem);
   QemuFwCfgReadBytes (FwCfgSize, Blob->Base);
 
-  Status = MeasureQemuFwCfgAcpi ((CHAR8 *) Allocate->File,
-                                sizeof(Allocate->File),
-                                (EFI_PHYSICAL_ADDRESS) Blob->Base,
-                                FwCfgSize
-                                );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Measure %s failure\n", Allocate->File));
-  }
-
   ZeroMem (Blob->Base + Blob->Size, EFI_PAGES_TO_SIZE (NumPages) - Blob->Size);
 
-  DEBUG ((DEBUG_VERBOSE, "%a: File=\"%a\" Alignment=0x%x Zone=%d Size=0x%Lx "
+  DEBUG ((DEBUG_INFO, ">>%a: File=\"%a\" Alignment=0x%x Zone=%d Size=0x%Lx "
     "Address=0x%Lx\n", __FUNCTION__, Allocate->File, Allocate->Alignment,
     Allocate->Zone, (UINT64)Blob->Size, (UINT64)(UINTN)Blob->Base));
   return EFI_SUCCESS;
@@ -972,7 +961,7 @@ Process2ndPassCmdAddPointer (
       // - Length field consistent with both ACPI and containing blob size
       // - checksum is correct
       //
-      DEBUG ((DEBUG_VERBOSE, "found \"%-4.4a\" size 0x%x\n",
+      DEBUG ((DEBUG_VERBOSE, "Found \"%-4.4a\" size 0x%x\n",
         (CONST CHAR8 *)&Header->Signature, Header->Length));
       TableSize = Header->Length;
 
@@ -1009,6 +998,17 @@ Process2ndPassCmdAddPointer (
     DEBUG ((DEBUG_ERROR, "%a: InstallAcpiTable(): %r\n", __FUNCTION__,
       Status));
     goto RollbackSeenPointer;
+  } else {
+    //
+    // Measure the installed ACPI table downloaded from QEMU
+    //
+    Status = MeasureQemuFwCfgAcpi ((CHAR8 *)&Header->Signature,
+                                  sizeof (Header->Signature),
+                                  PointerValue,
+                                  TableSize
+                                  );
+    DEBUG ((DEBUG_VERBOSE, "Measure ACPI table [%-4.4a] with Size = 0x%x - %r\n",
+                        (CONST CHAR8 *)&Header->Signature, TableSize, Status));
   }
   ++*NumInstalled;
   return EFI_SUCCESS;
@@ -1081,16 +1081,6 @@ InstallQemuFwCfgTables (
   EnablePciDecoding (&OriginalPciAttributes, &OriginalPciAttributesCount);
   QemuFwCfgSelectItem (FwCfgItem);
   QemuFwCfgReadBytes (FwCfgSize, LoaderStart);
-
-  Status = MeasureQemuFwCfgAcpi (
-              "etc/table-loader",
-              sizeof ("etc/table-loader"),
-              (EFI_PHYSICAL_ADDRESS) LoaderStart,
-              FwCfgSize
-            );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "Measure etc/table-loader failure\n"));
-  }
 
   RestorePciDecoding (OriginalPciAttributes, OriginalPciAttributesCount);
   LoaderEnd = LoaderStart + FwCfgSize / sizeof *LoaderEntry;
