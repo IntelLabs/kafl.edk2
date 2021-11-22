@@ -91,6 +91,8 @@ SET gUefiOvmfPkgTokenSpaceGuid.PcdBfvBase           = $(CODE_BASE_ADDRESS)
 SET gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataOffset  = $(VARS_SIZE)
 SET gUefiOvmfPkgTokenSpaceGuid.PcdBfvRawDataSize    = $(CODE_SIZE)
 
+SET gUefiOvmfPkgTokenSpaceGuid.PcdBootFvLength      = $(SECFV_SIZE)
+
 !if $(SMM_REQUIRE) == TRUE
 SET gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageVariableBase64 = gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageVariableBase
 SET gEfiMdeModulePkgTokenSpaceGuid.PcdFlashNvStorageFtwWorkingBase = gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageFtwWorkingBase

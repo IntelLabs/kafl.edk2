@@ -889,7 +889,7 @@ InitializeSecCoreData(
 
 #if defined (MDE_CPU_X64)
 
-EFI_STATUS
+VOID
 EFIAPI
 TdxInitialize (
   IN VOID                             *Context,
@@ -915,6 +915,12 @@ TdxInitialize (
   AsmWriteIdtr(&IdtDescriptor);
   InitializeCpuExceptionHandlers(NULL);
 
+  if (BootFv->FvLength != PcdGet32 (PcdBootFvLength)) {
+    DEBUG ((DEBUG_ERROR, "BootFv length is not correct! 0x%x != 0x%x\n",
+                          BootFv->FvLength, PcdGet32 (PcdBootFvLength)));
+    CpuDeadLoop ();
+  }
+
   DEBUG ((DEBUG_INFO,
     "SecCoreStartupWithStack(0x%x, 0x%x)\n",
     (UINT32)(UINTN)BootFv,
@@ -936,8 +942,6 @@ TdxInitialize (
   //
   InitializeApicTimer (0, MAX_UINT32, TRUE, 5);
   DisableApicTimerInterrupt ();
-
-  return EFI_SUCCESS;
 }
 
 #endif

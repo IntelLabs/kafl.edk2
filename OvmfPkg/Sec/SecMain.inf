@@ -76,6 +76,7 @@
 
   gUefiOvmfPkgTokenSpaceGuid.PcdUseTdxEmulation
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBackupBase
+  gUefiOvmfPkgTokenSpaceGuid.PcdBootFvLength
 
 [FeaturePcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdSmmSmramRequire
