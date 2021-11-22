@@ -132,9 +132,21 @@ TdxStartup(
   TransferHobList (VmmHobList);
 
   //
+  // Create and event log entry so VMM Hoblist can be measured
+  //
+  LogHobList (VmmHobList);
+
+  //
   // Initialize Platform
   //
   TdvfPlatformInitialize (&PlatformInfoHob, &CfgSysStateDefault, &CfgNxStackDefault);
+
+  if (!CfgSysStateDefault) {
+    TdxMeasureQemuCfg (1, FW_CFG_NX_STACK_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 6, 6);
+  }
+  if (!CfgNxStackDefault) {
+    TdxMeasureQemuCfg (1, FW_CFG_SYSTEM_STATE_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 7, sizeof (BOOLEAN));
+  }
 
   //
   // Get information needed to setup aps running in their
@@ -170,11 +182,6 @@ TdxStartup(
   RelocatedMailBox->WakeUpVector = 0;
 
   PlatformInfoHob.RelocatedMailBox = (UINT64)RelocatedMailBox;
-
-  //
-  // Create and event log entry so VMM Hoblist can be measured
-  //
-  LogHobList (VmmHobList);
 
   //
   // Wakup APs and have been move to the finalized run loop
@@ -215,13 +222,6 @@ TdxStartup(
   MeasureConfigurationVolume ((UINT64)(UINTN)PcdGet32 (PcdCfvBase));
 
   PlatformInfoPtr = (UINT8*)BuildGuidDataHob (&gUefiOvmfPkgTdxPlatformGuid, &PlatformInfoHob, sizeof (EFI_HOB_PLATFORM_INFO));
-
-  if (!CfgSysStateDefault) {
-    TdxMeasureQemuCfg (1, FW_CFG_NX_STACK_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 6, 6);
-  }
-  if (!CfgNxStackDefault) {
-    TdxMeasureQemuCfg (1, FW_CFG_SYSTEM_STATE_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 7, sizeof (BOOLEAN));
-  }
 
   BuildStackHob ((UINTN)SecCoreData->StackBase, SecCoreData->StackSize <<=1 );
 

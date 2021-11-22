@@ -91,6 +91,10 @@ HandOffToDxeCore (
     //
     PageTables = CreateIdentityMappingPageTables ((EFI_PHYSICAL_ADDRESS) (UINTN) BaseOfStack,
       STACK_SIZE);
+    if (PageTables == 0) {
+      DEBUG ((DEBUG_ERROR, "Failed to create idnetity mapping page tables.\n"));
+      CpuDeadLoop ();
+    }
   } else {
     //
     // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
