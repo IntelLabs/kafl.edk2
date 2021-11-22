@@ -30,7 +30,7 @@ GetGpaPageLevel (
 {
   UINTN Index;
 
-  for (Index = 0; Index < sizeof (mTdxAcceptPageLevelMap) / sizeof (mTdxAcceptPageLevelMap[0]); Index++) {
+  for (Index = 0; Index < ARRAY_SIZE (mTdxAcceptPageLevelMap); Index++) {
     if (mTdxAcceptPageLevelMap[Index] == PageSize) {
       break;
     }
@@ -68,7 +68,7 @@ TdAcceptPages (
   Address = StartAddress;
 
   GpaPageLevel = (UINT64) GetGpaPageLevel (PageSize);
-  if (GpaPageLevel > sizeof (mTdxAcceptPageLevelMap) / sizeof (mTdxAcceptPageLevelMap[0])) {
+  if (GpaPageLevel == ARRAY_SIZE (mTdxAcceptPageLevelMap)) {
     DEBUG ((DEBUG_ERROR, "Accept page size must be 4K/2M. Invalid page size - 0x%llx\n", PageSize));
     return EFI_INVALID_PARAMETER;
   }
