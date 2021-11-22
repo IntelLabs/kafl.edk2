@@ -123,9 +123,6 @@ HashCompleteAndExtend (
              SHA384_DIGEST_SIZE,
              (UINT8)PcrIndex
              );
-
-  DEBUG((DEBUG_INFO, "Td: HashAndExtend: RTMR = %d, DataPtr = %p, DataLen = 0x%x, Status = %r\n",
-    PcrIndex, DataToHash, DataToHashLen, Status));
   
   return Status;
 }
@@ -151,6 +148,7 @@ HashAndExtend (
 {
   HASH_HANDLE    HashHandle;
   EFI_STATUS     Status;
+  UINTN          Index;
 
   if (mHashInterfaceCount == 0) {
     return EFI_UNSUPPORTED;
@@ -159,6 +157,17 @@ HashAndExtend (
   HashStart (&HashHandle);
   HashUpdate (HashHandle, DataToHash, DataToHashLen);
   Status = HashCompleteAndExtend (HashHandle, PcrIndex, NULL, 0, DigestList);
+
+  DEBUG((DEBUG_INFO, "Td: HashAndExtend: MR = %d, DataPtr = %p, DataLen = 0x%x, Status = %r\n",
+    PcrIndex, DataToHash, DataToHashLen, Status));
+
+  if (!EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_INFO, "  Digest (0x%x): ", DigestList->digests[0].hashAlg));
+    for (Index = 0; Index < 16; Index++) {
+      DEBUG ((DEBUG_INFO, "%02x ", (UINTN)DigestList->digests[0].digest.sha384[Index]));
+    }
+    DEBUG ((DEBUG_INFO, "... ...\n"));
+  }
 
   return Status;
 }

@@ -30,23 +30,31 @@ typedef struct {
 
 #pragma pack()
 
+#define INVALID_PCR2MR_INDEX  0xFF
+
 /**
-    MRTD     => PCR[0]
     RTMR[0]  => PCR[1,7]
-    RTMR[1]  => PCR[2,3,4,5,6]
+    RTMR[1]  => PCR[2,3,4,5]
     RTMR[2]  => PCR[8~15]
     RTMR[3]  => NA
-
+  Note:
+    PCR[0] is mapped to MRTD and should not appear here.
+    PCR[6] is reserved for OEM. It is not used.
 **/
 UINT8 GetMappedRtmrIndex(UINT32 PCRIndex)
 {
   UINT8  RtmrIndex;
 
-  ASSERT (PCRIndex <= 16 && PCRIndex >= 0);
+  if (PCRIndex == 6 || PCRIndex == 0 || PCRIndex > 15) {
+    DEBUG ((DEBUG_ERROR, "Invalid PCRIndex(%d) map to MR Index.\n", PCRIndex));
+    ASSERT (FALSE);
+    return INVALID_PCR2MR_INDEX;
+  }
+
   RtmrIndex = 0;
   if (PCRIndex == 1 || PCRIndex == 7) {
     RtmrIndex = 0;
-  } else if (PCRIndex >= 2 && PCRIndex <= 6) {
+  } else if (PCRIndex >= 2 && PCRIndex < 6) {
     RtmrIndex = 1;
   } else if (PCRIndex >= 8 && PCRIndex <= 15) {
     RtmrIndex = 2;
@@ -90,10 +98,14 @@ TpmMeasureAndLogData (
   TPML_DIGEST_VALUES                DigestList;
   UINT8                             *Ptr;
 
-  DEBUG ((EFI_D_INFO, "Creating TdTcg2PcrEvent PCR %d EventType 0x%x\n", PcrIndex, EventType));
-
   RtmrIndex = GetMappedRtmrIndex (PcrIndex);
-  Status    = HashAndExtend (RtmrIndex,
+  if (RtmrIndex == INVALID_PCR2MR_INDEX) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  DEBUG ((EFI_D_INFO, "Creating TdTcg2PcrEvent PCR[%d]/RTMR[%d] EventType 0x%x\n", PcrIndex, RtmrIndex, EventType));
+
+  Status = HashAndExtend (RtmrIndex,
                       (VOID*)HashData,
                       HashDataLen,
                       &DigestList);
@@ -118,8 +130,6 @@ TpmMeasureAndLogData (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - data %p\n", EventHobData));
-
   Ptr = (UINT8*)EventHobData;
   //
   // Initialize PcrEvent data now
@@ -131,7 +141,6 @@ TpmMeasureAndLogData (
   Ptr += sizeof(TCG_EVENTTYPE);
 
   DigestBuffer = Ptr;
-  DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - digest %p\n", DigestBuffer));
 
   TdxDigest = (TDX_DIGEST_VALUE *)DigestBuffer;
   TdxDigest->count = 1;
@@ -141,7 +150,6 @@ TpmMeasureAndLogData (
           SHA384_DIGEST_SIZE);
 
   Ptr += sizeof(TDX_DIGEST_VALUE);
-  DEBUG ((EFI_D_INFO, "  Tcg2PcrEvent - eventdata %p\n", DigestBuffer));
 
   CopyMem (Ptr, &LogLen, sizeof(UINT32));
   Ptr += sizeof(UINT32);
