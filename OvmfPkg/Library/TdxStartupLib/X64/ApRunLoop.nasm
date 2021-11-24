@@ -20,12 +20,12 @@ SECTION .text
 
 BITS 64
 
+%define TDVMCALL_EXPOSE_REGS_MASK       0xffec
+%define TDVMCALL                        0x0
+%define EXIT_REASON_CPUID               0xa
+
 %macro  tdcall  0
-%if (FixedPcdGet32 (PcdUseTdxEmulation) != 0)
-  vmcall
-%else
   db  0x66, 0x0f, 0x01, 0xcc
-%endif
 %endmacro
 
 ;
@@ -40,18 +40,15 @@ global ASM_PFX(AsmRelocateApMailBoxLoop)
 ASM_PFX(AsmRelocateApMailBoxLoop):
 AsmRelocateApMailBoxLoopStart:
 
-    ;
-    ; TdCall[TDINFO] to get the vCpuId
-    ;
-    ;mov     rax, 1
-    ;tdcall
-    ;
-    ; R8  [31:0]  NUM_VCPUS
-    ;     [63:32] MAX_VCPUS
-    ; R9  [31:0]  VCPU_INDEX
-    ;
+    mov         rax, TDVMCALL
+    mov         rcx, TDVMCALL_EXPOSE_REGS_MASK
+    mov         r11, EXIT_REASON_CPUID
+    mov         r12, 0xb
+    tdcall
+    test        rax, rax
+    jnz         Panic
+    mov         r8, r15
 
-    mov       r8, rbp
 MailBoxLoop:
     ; Spin until command set
     cmp        dword [rbx + CommandOffset], MpProtectedModeWakeupCommandNoop
@@ -73,6 +70,8 @@ MailBoxWakeUp:
     jmp       rax
 MailBoxSleep:
     jmp       $
+Panic:
+    ud2
 BITS 64
 AsmRelocateApMailBoxLoopEnd:
 
