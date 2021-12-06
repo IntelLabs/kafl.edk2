@@ -172,7 +172,7 @@ InternalDumpHex (
 
 **/
 
-VOID 
+EFI_STATUS
 DumpRtmr(
   IN UINT8   *ReportBuffer,
   IN UINT32 ReportSize,
@@ -190,10 +190,12 @@ DumpRtmr(
   mAdditionalData = AdditionalData;
   mDataSize = DataSize;
   Status = DoTdReport(mReportBuffer, mReportSize, mAdditionalData, mDataSize);
+
   if (EFI_ERROR (Status)){
     Print (L"ReadTdReport - %r\n", Status);
-  return;
-}
+  }
+
+  return Status;
 }
 
 
@@ -849,7 +851,7 @@ DumpTdxEventLog (
   )
 {
   TCG_PCR_EVENT_HDR                *TcgEventHdr;
-  CC_EVENT                   *TdMrEvent;
+  CC_EVENT                         *TdMrEvent;
   TCG_EfiSpecIDEventStruct         *TcgEfiSpecIdEventStruct;
   UINT32                           numberOfAlgorithms;
   TCG_EfiSpecIdEventAlgorithmSize  *digestSize;
@@ -860,11 +862,10 @@ DumpTdxEventLog (
   TPMU_HA                          HashDigest;
   TDREPORT_STRUCT                  *TdReportBuffer = NULL;
   UINT32                           TdReportBufferSize;
-  UINT8                            *AdditionalData;
+  UINT8                            *AdditionalData = NULL;
   UINT32                           DataSize=64;
   UINT8                            Index;
-
-
+  EFI_STATUS                       Status;
 
   Print (L"EventLogFormat: (0x%x)\n", EventLogFormat);
   Print (L"EventLogLocation: (0x%lx)\n", EventLogLocation);
@@ -902,15 +903,18 @@ DumpTdxEventLog (
       }
     Print (L"TdEvent end\n");
   } else {
+
     TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
     TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
 
     numberOfAlgorithms = GetTcgSpecIdNumberOfAlgorithms (TcgEfiSpecIdEventStruct);
     digestSize = GetTcgSpecIdDigestSize (TcgEfiSpecIdEventStruct);
+
     for (AlgoIndex = 0; AlgoIndex < numberOfAlgorithms; AlgoIndex++) {
       HashAlg = digestSize[AlgoIndex].algorithmId;
       ZeroMem (&HashDigest, sizeof(HashDigest));
       TdMrEvent = (CC_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
+
       while ((UINTN)TdMrEvent <= EventLogLastEntry) {
         if ((RegisterIndex == TdMrEvent->MrIndex) && (TdMrEvent->EventType != EV_NO_ACTION)) {
           DigestBuffer = GetDigestFromMrEvent (TdMrEvent, HashAlg);
@@ -918,41 +922,68 @@ DumpTdxEventLog (
             ExtendEvent (HashAlg, HashDigest.sha384, DigestBuffer);
           }
         }
-          TdMrEvent = (CC_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
+        TdMrEvent = (CC_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
       }
+
       Print (L"TdEvent Calculated:\n");
       Print (L"    RegisterIndex  - %d\n", RegisterIndex);
       Print (L"    Digest    - ");
+
       for (Index = 0; Index < digestSize[AlgoIndex].digestSize; Index++) {
-          Print (L"%02x", HashDigest.sha384[Index]);
-        }
-        Print (L"\n");
+        Print (L"%02x", HashDigest.sha384[Index]);
+      }
+
+      Print (L"\n");
+
       TdReportBufferSize = sizeof(TDREPORT_STRUCT);
       TdReportBuffer = AllocatePool(TdReportBufferSize);
+      if (TdReportBuffer == NULL) {
+        Print (L"Failed to allocation TdReportBuffer\n");
+        goto Finish;
+      }
+
       AdditionalData = AllocatePool(DataSize);
-      DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
-      if (TdReportBuffer != NULL && RegisterIndex ==0)
-        {
+      if (AdditionalData == NULL) {
+        Print (L"Failed to allocation AdditionalData\n");
+        goto Finish;
+      }
+
+      Status = DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
+      if (EFI_ERROR (Status)) {
+        goto Finish;
+      }
+
+      if (RegisterIndex ==0) {
          Print (L"MRTD dumped:\n");
          Print (L"    MRTD  - %d\n", RegisterIndex);
          Print (L"    Digest    - ");
          InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Mrtd, 0x30);
          Print (L"\n");
+      } else {
+         if (RegisterIndex > MAX_TDX_REG_INDEX) {
+           Print (L"Invalid Register index. %x\n", RegisterIndex);
+           goto Finish;
          }
-         else
-         {
+
          Print (L"RTMR Dumped:\n");
          Print (L"    RTMR[%d] \n", (RegisterIndex-1));
          Print (L"    Digest    - ");
          InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Rtmrs[RegisterIndex-1], 0x30);
          Print (L"\n");
+      }
+
+Finish:
+       if (TdReportBuffer != NULL) {
          FreePool(TdReportBuffer);
          TdReportBuffer = NULL;
+       }
+       if (AdditionalData == NULL) {
          FreePool(AdditionalData);
-         }
-      }
+         AdditionalData = NULL;
+       }
     }
   }
+}
 
 
 
@@ -1051,7 +1082,7 @@ DumpAcpiTdxEventLog (
   )
 {
   TCG_PCR_EVENT_HDR                *TcgEventHdr;
-  CC_EVENT                   *TdMrEvent;
+  CC_EVENT                         *TdMrEvent;
   TCG_EfiSpecIDEventStruct         *TcgEfiSpecIdEventStruct;
   UINT32                           numberOfAlgorithms;
   TCG_EfiSpecIdEventAlgorithmSize  *digestSize;
@@ -1061,9 +1092,10 @@ DumpAcpiTdxEventLog (
   TPMU_HA                          HashDigest;
   TDREPORT_STRUCT                  *TdReportBuffer = NULL;
   UINT32                           TdReportBufferSize;
-  UINT8                            *AdditionalData;
+  UINT8                            *AdditionalData = NULL;
   UINT32                           DataSize=64;
   UINT8                            Index;
+  EFI_STATUS                       Status;
 
   Print (L"EventLogFormat: (0x%x)\n", EventLogFormat);
   Print (L"EventLogLocation: (0x%lx)\n", EventLogLocation);
@@ -1073,7 +1105,7 @@ DumpAcpiTdxEventLog (
       DumpTcgEfiSpecIdEventStruct (TcgEfiSpecIdEventStruct);
 
       TdMrEvent = (CC_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-      while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((0 <= TdMrEvent->MrIndex) && (TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
+      while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
         if ((RegisterIndex == INDEX_ALL) || (RegisterIndex == TdMrEvent->MrIndex)) {
          // Print(L"Start Dump Td Event\n");
           DumpTdvfEvent2 (TdMrEvent);
@@ -1082,9 +1114,9 @@ DumpAcpiTdxEventLog (
         }
         TdMrEvent = (CC_EVENT *)((UINTN)TdMrEvent + GetMrEventSize (TdMrEvent));
       }
-    Print (L"TdEvent end\n");
+      Print (L"TdEvent end\n");
       
-    for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++){
+    for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++) {
       TcgEventHdr = (TCG_PCR_EVENT_HDR *)(UINTN)EventLogLocation;
       TcgEfiSpecIdEventStruct = (TCG_EfiSpecIDEventStruct *)(TcgEventHdr + 1);
 
@@ -1095,7 +1127,7 @@ DumpAcpiTdxEventLog (
         ZeroMem (&HashDigest, sizeof(HashDigest));
 
         TdMrEvent = (CC_EVENT *)((UINTN)TcgEfiSpecIdEventStruct + GetTcgEfiSpecIdEventStructSize (TcgEfiSpecIdEventStruct));
-       while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((0 <= TdMrEvent->MrIndex) && (TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
+       while ((UINTN)TdMrEvent <=(EventLogLocation+ (Laml-1)) && ((TdMrEvent->MrIndex) <=4) && (TdMrEvent->Digests.count ==1)) {
           if ((RegisterIndex == TdMrEvent->MrIndex) && (TdMrEvent->EventType != EV_NO_ACTION)) {
             DigestBuffer = GetDigestFromMrEvent (TdMrEvent, HashAlg);
             if (DigestBuffer != NULL) {
@@ -1113,30 +1145,49 @@ DumpAcpiTdxEventLog (
         Print (L"\n");
 
       }
+
       TdReportBufferSize = sizeof(TDREPORT_STRUCT);
       TdReportBuffer = AllocatePool(TdReportBufferSize);
+      if (TdReportBuffer == NULL) {
+        Print (L"Failed to allocate TdReportBuffer\n");
+        goto Finish2;
+      }
+
       AdditionalData = AllocatePool(DataSize);
-      DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
-      if (TdReportBuffer != NULL && RegisterIndex ==0)
-        {
-         Print (L"MRTD dumped:\n");
-         Print (L"    MRTD  - %d\n", RegisterIndex);
-         Print (L"    Digest    - ");
-         InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Mrtd, 0x30);
-         Print (L"\n");
-         }
-         else
-         {
-         Print (L"RTMR Dumped:\n");
-         Print (L"    RTMR[%d] \n", (RegisterIndex-1));
-         Print (L"    Digest    - ");
-         InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Rtmrs[RegisterIndex-1], 0x30);
-         Print (L"\n");
-         FreePool(TdReportBuffer);
-         TdReportBuffer = NULL;
-         FreePool(AdditionalData);
-         }
-    }
+      if (AdditionalData == NULL) {
+        Print (L"Failed to allocate AdditionalData\n");
+        goto Finish2;
+      }
+
+      Status = DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
+      if (EFI_ERROR (Status)) {
+        goto Finish2;
+      }
+
+      if (RegisterIndex ==0) {
+        Print (L"MRTD dumped:\n");
+        Print (L"    MRTD  - %d\n", RegisterIndex);
+        Print (L"    Digest    - ");
+        InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Mrtd, 0x30);
+        Print (L"\n");
+      } else {
+        Print (L"RTMR Dumped:\n");
+        Print (L"    RTMR[%d] \n", (RegisterIndex-1));
+        Print (L"    Digest    - ");
+        InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Rtmrs[RegisterIndex-1], 0x30);
+        Print (L"\n");
+      }
+
+Finish2:
+      if (TdReportBuffer != NULL) {
+        FreePool(TdReportBuffer);
+        TdReportBuffer = NULL;
+      }
+      if (AdditionalData != NULL) {
+        FreePool(AdditionalData);
+        AdditionalData = NULL;
+      }
+  }
 }
 
 VOID
@@ -1371,6 +1422,7 @@ UefiMain (
   UINT32                           Index;
   EFI_CC_BOOT_SERVICE_CAPABILITY   ProtocolCapability;
   EFI_CC_FINAL_EVENTS_TABLE        *FinalEventsTable;
+
   Status = ShellCommandLineParse (mParamList, &ParamPackage, NULL, TRUE);
   if (EFI_ERROR(Status)) {
     Print(L"ERROR: Incorrect command line.\n");
@@ -1399,31 +1451,48 @@ UefiMain (
     UINT32                           RegisterIndex;
     TDREPORT_STRUCT                  *TdReportBuffer = NULL;
     UINT32                           TdReportBufferSize;
-    UINT8                            *AdditionalData;
+    UINT8                            *AdditionalData = NULL;
     UINT32                           DataSize=64;
+
     TdReportBufferSize = sizeof(TDREPORT_STRUCT);
     TdReportBuffer = AllocatePool(TdReportBufferSize);
     AdditionalData = AllocatePool(DataSize);
-    DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
-    for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++)
-    {
-       if (TdReportBuffer != NULL && RegisterIndex ==0)
-       {
+    if (TdReportBuffer == NULL || AdditionalData == NULL) {
+      Print (L"Failed to allocate TdReportBuffer/AdditionalData\n");
+      goto Finish3;
+    }
+
+    Status = DumpRtmr((UINT8 *)TdReportBuffer, TdReportBufferSize, AdditionalData, DataSize);
+    if (EFI_ERROR (Status)) {
+      goto Finish3;
+    }
+
+    for (RegisterIndex = 0; RegisterIndex <= MAX_TDX_REG_INDEX; RegisterIndex++) {
+       if (RegisterIndex ==0) {
          Print (L"MRTD dumped:\n");
          Print (L"    MRTD  - %d\n", RegisterIndex);
          Print (L"    Digest    - ");
          InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Mrtd, 0x30);
          Print (L"\n");
-         }else{
+       } else {
          Print (L"RTMR Dumped:\n");
          Print (L"    RTMR[%d] \n", (RegisterIndex-1));
          Print (L"    Digest    - ");
          InternalDumpData((UINT8 *)TdReportBuffer->Tdinfo.Rtmrs[RegisterIndex-1], 0x30);
          Print (L"\n");
-         }
+       }
     }
-    FreePool(TdReportBuffer);
-    FreePool(AdditionalData);
+
+Finish3:
+    if (TdReportBuffer != NULL) {
+      FreePool(TdReportBuffer);
+      TdReportBuffer = NULL;
+    }
+
+    if (AdditionalData != NULL) {
+      FreePool(AdditionalData);
+      AdditionalData = NULL;
+    }
     return EFI_SUCCESS;
   }
 
