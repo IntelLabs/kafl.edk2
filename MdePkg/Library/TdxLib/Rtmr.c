@@ -49,7 +49,7 @@ TdExtendRtmr (
 
   Status = EFI_SUCCESS;
 
-  ASSERT (Index >= 0 && Index < RTMR_COUNT);
+  ASSERT (Index < RTMR_COUNT);
   ASSERT (DataLen == SHA384_DIGEST_SIZE);
 
   ExtendBuffer = ALIGN_POINTER (TDX_EXTEND_BUFFER, 64);
