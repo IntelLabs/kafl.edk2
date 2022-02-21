@@ -330,6 +330,8 @@ CleanPciCapMap (
     Link = Link->ForwardLink;
     FreePool (Entry);
   }
+
+  InitializeListHead (&mPciCapMap);
 }
 
 BOOLEAN
@@ -476,6 +478,8 @@ ValidateCapabilities (
 
 DoneValidateCapabilities:
   CleanPciCapMap ();
+  ZeroMem (mPciBars, sizeof (mPciBars));
+  mPciBarsInitialized = FALSE;
 
   return Valid;
 }
