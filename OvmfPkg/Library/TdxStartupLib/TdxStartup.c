@@ -105,6 +105,11 @@ TdxStartup(
   ZeroMem (&PlatformInfoHob, sizeof (PlatformInfoHob));
 
   //
+  // Dump HobList if DEBUG enabled
+  //
+  DumpTdHobList(VmmHobList);
+
+  //
   // Validate HobList
   //
   if (ValidateHobList (VmmHobList) == FALSE) {
