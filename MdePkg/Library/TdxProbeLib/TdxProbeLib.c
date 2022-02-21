@@ -11,8 +11,8 @@
 #include <Library/TdxProbeLib.h>
 #include "InternalTdxProbe.h"
 
-BOOLEAN mTdxEnabled = FALSE;
-BOOLEAN mTdxProbed = FALSE;
+BOOLEAN mTdxEnabled = TRUE;
+BOOLEAN mTdxProbed = TRUE;
 
 /**
   Whether Intel TDX is enabled.
