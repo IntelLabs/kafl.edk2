@@ -84,6 +84,12 @@ LogHobList (
   IN CONST VOID             *HobStart
   );
 
+VOID
+EFIAPI
+DumpTdHobList (
+  IN CONST VOID             *HobStart
+  );
+
 EFI_STATUS
 TdxMeasureFvImage (
   IN EFI_PHYSICAL_ADDRESS           FvBase,

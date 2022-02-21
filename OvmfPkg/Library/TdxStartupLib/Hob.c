@@ -8,6 +8,7 @@
 
 **/
 
+#include <inttypes.h>
 #include <PiPei.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
@@ -659,3 +660,84 @@ LogHobList (
 }
 
 
+/**
+  Dumps the TdHobList.
+
+  @param[in] VmmHobList    The Hoblist
+
+**/
+VOID
+EFIAPI
+DumpTdHobList(
+  IN CONST VOID                             *TdHobList
+)
+{
+  int count;
+  EFI_PEI_HOB_POINTERS Hob;
+
+  DEBUG((DEBUG_INFO, "Dump TdHobList\n"));
+  for (
+      count = 1,
+      Hob.Raw = (UINT8 *) TdHobList;
+      !END_OF_HOB_LIST (Hob);
+      count++,
+      Hob.Raw = (UINT8 *) (Hob.Raw + Hob.Header->HobLength)
+      ) {
+    DEBUG((DEBUG_INFO, "  [%d] Type: %u, Length: %u\n", count, Hob.Header->HobType, Hob.Header->HobLength));
+
+    switch (Hob.Header->HobType) {
+      case EFI_HOB_TYPE_HANDOFF:
+        DEBUG((DEBUG_INFO, "  EFI_HOB_HANDOFF_INFO_TABLE\n"));
+        DEBUG((DEBUG_INFO, "    Version: %"PRIu32"\n", Hob.HandoffInformationTable->Version));
+        DEBUG((DEBUG_INFO, "    BootMode: %"PRIu32"\n", Hob.HandoffInformationTable->BootMode));
+        DEBUG((DEBUG_INFO, "    EfiMemoryTop: 0x%"PRIx64"\n", Hob.HandoffInformationTable->EfiMemoryTop));
+        DEBUG((DEBUG_INFO, "    EfiMemoryBottom: 0x%"PRIx64"\n", Hob.HandoffInformationTable->EfiMemoryBottom));
+        DEBUG((DEBUG_INFO, "    EfiFreeMemoryTop: 0x%"PRIx64"\n", Hob.HandoffInformationTable->EfiFreeMemoryTop));
+        DEBUG((DEBUG_INFO, "    EfiFreeMemoryBottom: 0x%"PRIx64"\n", Hob.HandoffInformationTable->EfiFreeMemoryBottom));
+        DEBUG((DEBUG_INFO, "    EfiEndOfHobList: 0x%"PRIx64"\n", Hob.HandoffInformationTable->EfiEndOfHobList));
+        break;
+      case EFI_HOB_TYPE_RESOURCE_DESCRIPTOR:
+        DEBUG((DEBUG_INFO, "  EFI_HOB_MEMORY_ALLOCATION\n"));
+        DEBUG((DEBUG_INFO, "    Owner: \n"));
+        switch (Hob.ResourceDescriptor->ResourceType) {
+          case EFI_RESOURCE_SYSTEM_MEMORY:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_SYSTEM_MEMORY"));
+            break;
+        case EFI_RESOURCE_MEMORY_MAPPED_IO:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_MEMORY_MAPPED_IO"));
+            break;
+        case EFI_RESOURCE_IO:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_IO"));
+            break;
+        case EFI_RESOURCE_FIRMWARE_DEVICE:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_FIRMWARE_DEVICE"));
+            break;
+        case EFI_RESOURCE_MEMORY_MAPPED_IO_PORT:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_MEMORY_MAPPED_IO_PORT"));
+            break;
+        case EFI_RESOURCE_MEMORY_RESERVED:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_MEMORY_RESERVED"));
+            break;
+        case EFI_RESOURCE_IO_RESERVED:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_IO_RESERVED"));
+            break;
+        case EFI_RESOURCE_MEMORY_UNACCEPTED:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_MEMORY_UNACCEPTED"));
+            break;
+        case EFI_RESOURCE_MAX_MEMORY_TYPE:
+            DEBUG((DEBUG_INFO, "    ResourceType: %"PRIu32" (%a)\n", Hob.ResourceDescriptor->ResourceType, "EFI_RESOURCE_MAX_MEMORY_TYPE"));
+            break;
+        default:
+            DEBUG((DEBUG_ERROR, "   Unhandled ResourceType\n"));
+            break;
+        }
+        DEBUG((DEBUG_INFO, "    ResourceAttribute: %"PRIu32"\n", Hob.ResourceDescriptor->ResourceAttribute));
+        DEBUG((DEBUG_INFO, "    PhysicalStart: 0x%"PRIx64"\n", Hob.ResourceDescriptor->PhysicalStart));
+        DEBUG((DEBUG_INFO, "    ResourceLength: %"PRIu64" (0x%"PRIx64")\n", Hob.ResourceDescriptor->ResourceLength, Hob.ResourceDescriptor->ResourceLength));
+        break;
+      default:
+        DEBUG((DEBUG_ERROR, " %a: Unhandled Hob type\n", __FUNCTION__));
+        break;
+    }
+  }
+}
