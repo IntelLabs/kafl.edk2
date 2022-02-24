@@ -249,28 +249,31 @@ IoMmuMap (
     goto FreeMapInfo;
   }
 
-  //
-  // Clear the memory encryption mask on the plaintext buffer.
-  //
-  if (mMemEncryptType == MEM_ENCRYPT_SEV_ENABLED) {
-    Status = MemEncryptSevClearPageEncMask (
-               0,
-               MapInfo->PlainTextAddress,
-               MapInfo->NumberOfPages,
-               TRUE
-               );
-  } else if (mMemEncryptType == MEM_ENCRYPT_TDX_ENABLED) {
-    Status = MemEncryptTdxClearPageEncMask (
-               0,
-               MapInfo->PlainTextAddress,
-               MapInfo->NumberOfPages,
-               TRUE
-               );
-  }
-  ASSERT_EFI_ERROR (Status);
-  if (EFI_ERROR (Status)) {
-    CpuDeadLoop ();
-  }
+  /*
+   * Commented to avoid pagefault in SDV
+   */
+  // //
+  // // Clear the memory encryption mask on the plaintext buffer.
+  // //
+  // if (mMemEncryptType == MEM_ENCRYPT_SEV_ENABLED) {
+  //   Status = MemEncryptSevClearPageEncMask (
+  //              0,
+  //              MapInfo->PlainTextAddress,
+  //              MapInfo->NumberOfPages,
+  //              TRUE
+  //              );
+  // } else if (mMemEncryptType == MEM_ENCRYPT_TDX_ENABLED) {
+  //   Status = MemEncryptTdxClearPageEncMask (
+  //              0,
+  //              MapInfo->PlainTextAddress,
+  //              MapInfo->NumberOfPages,
+  //              TRUE
+  //              );
+  // }
+  // ASSERT_EFI_ERROR (Status);
+  // if (EFI_ERROR (Status)) {
+  //   CpuDeadLoop ();
+  // }
 
   //
   // If this is a read operation from the Bus Master's point of view,
