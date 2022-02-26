@@ -10,6 +10,12 @@
 #include <Library/IoLib.h>
 #include <Library/SerialPortLib.h>
 
+#define KAFL_HPRINTF_SERIAL
+#ifdef KAFL_HPRINTF_SERIAL
+#include <Library/NyxHypercalls.h>
+#endif
+
+
 //---------------------------------------------
 // UART Register Offsets
 //---------------------------------------------
@@ -67,6 +73,7 @@ SerialPortInitialize (
   VOID
   )
 {
+#ifndef KAFL_HPRINTF_SERIAL
   UINTN  Divisor;
   UINT8  OutputData;
   UINT8  Data;
@@ -99,6 +106,7 @@ SerialPortInitialize (
   OutputData = (UINT8) ( (gBreakSet << 6) | (gParity << 3) | (gStop << 2) | Data);
   IoWrite8 (gUartBase + LCR_OFFSET, OutputData);
 
+#endif
   return RETURN_SUCCESS;
 }
 
@@ -129,7 +137,9 @@ SerialPortWrite (
 )
 {
   UINTN  Result;
+#ifndef KAFL_HPRINTF_SERIAL
   UINT8  Data;
+#endif
 
   if (Buffer == NULL) {
     return 0;
@@ -137,6 +147,7 @@ SerialPortWrite (
 
   Result = NumberOfBytes;
 
+#ifndef KAFL_HPRINTF_SERIAL
   while ((NumberOfBytes--) != 0) {
     //
     // Wait for the serial port to be ready.
@@ -146,6 +157,9 @@ SerialPortWrite (
     } while ((Data & LSR_TXRDY) == 0);
     IoWrite8 ((UINT16) gUartBase, *Buffer++);
   }
+#else
+  kAFL_hypercall(HYPERCALL_KAFL_PRINTF, (UINT64)Buffer);
+#endif
 
   return Result;
 }
