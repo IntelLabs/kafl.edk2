@@ -10,23 +10,6 @@
 #ifndef NYX_API_H
 #define NYX_API_H
 
-#include <stdarg.h>
-#include <stdio.h>
-
-#ifdef __MINGW64__
-#ifndef uint64_t
-#define uint64_t UINT64
-#endif
-#ifndef int32_t
-#define int32_t INT32
-#endif
-#ifndef uint8_t
-#define uint8_t UINT8
-#endif
-#else 
-#include <stdint.h>
-#endif
-
 #define HYPERCALL_KAFL_RAX_ID				0x01f
 #define HYPERCALL_KAFL_ACQUIRE				0
 #define HYPERCALL_KAFL_GET_PAYLOAD			1
@@ -77,57 +60,40 @@
 #define HYPERCALL_KAFL_NESTED_HPRINTF		(4 | HYPERTRASH_HYPERCALL_MASK)gre
 
 #define HPRINTF_MAX_SIZE					0x1000					/* up to 4KB hprintf strings */
+#define PAYLOAD_MAX_SIZE                    (128*1024)
 
 #define KAFL_MODE_64	0
 #define KAFL_MODE_32	1
 #define KAFL_MODE_16	2
 
 typedef struct {
-	int32_t size;
-	uint8_t data[];
+	INT32 size;
+	UINT8 data[];
 } kAFL_payload;
 
 typedef struct {
-	uint64_t ip[4];
-	uint64_t size[4];
-	uint8_t enabled[4];
+	UINT64 ip[4];
+	UINT64 size[4];
+	UINT8 enabled[4];
 } kAFL_ranges; 
 
-#if defined(__i386__)
-static inline uint32_t kAFL_hypercall(uint32_t p1, uint32_t p2)
+static inline UINT64 kAFL_hypercall(UINT64 p1, UINT64 p2)
 {
-	uint32_t nr = HYPERCALL_KAFL_RAX_ID;
+	UINT64 nr = HYPERCALL_KAFL_RAX_ID;
 	asm volatile ("vmcall"
 				  : "=a" (nr)
 				  : "a"(nr), "b"(p1), "c"(p2));
 	return nr;
 }
-#elif defined(__x86_64__)
-static inline uint64_t kAFL_hypercall(uint64_t p1, uint64_t p2)
-{
-	uint64_t nr = HYPERCALL_KAFL_RAX_ID;
-	asm volatile ("vmcall"
-				  : "=a" (nr)
-				  : "a"(nr), "b"(p1), "c"(p2));
-	return nr;
-}
-#endif
 
 static void habort(char* msg) __attribute__ ((unused));
 static void habort(char* msg){
-	kAFL_hypercall(HYPERCALL_KAFL_USER_ABORT, (uintptr_t)msg);
+	kAFL_hypercall(HYPERCALL_KAFL_USER_ABORT, (UINTN)msg);
 }
 
-static void hprintf(const char * format, ...)  __attribute__ ((unused));
-static void hprintf(const char * format, ...){
-	static char hprintf_buffer[HPRINTF_MAX_SIZE] __attribute__((aligned(4096)));
-
-	va_list args;
-	va_start(args, format);
-	vsnprintf((char*)hprintf_buffer, HPRINTF_MAX_SIZE, format, args);
-	//printf("%s", hprintf_buffer);
-	kAFL_hypercall(HYPERCALL_KAFL_PRINTF, (uintptr_t)hprintf_buffer);
-	va_end(args);
+static void hprintf(const char *msg)  __attribute__ ((unused));
+static void hprintf(const char *msg){
+	kAFL_hypercall(HYPERCALL_KAFL_PRINTF, (UINTN)msg);
 }
 
 #define NYX_HOST_MAGIC  0x4878794e
@@ -137,41 +103,35 @@ static void hprintf(const char * format, ...){
 #define NYX_AGENT_VERSION 1
 
 typedef struct host_config_s {
-	uint32_t host_magic;
-	uint32_t host_version;
-	uint32_t bitmap_size;
-	uint32_t ijon_bitmap_size;
-	uint32_t payload_buffer_size;
-	uint32_t worker_id;
+	UINT32 host_magic;
+	UINT32 host_version;
+	UINT32 bitmap_size;
+	UINT32 ijon_bitmap_size;
+	UINT32 payload_buffer_size;
+	UINT32 worker_id;
 	/* more to come */
 } __attribute__((packed)) host_config_t;
 
 typedef struct agent_config_s {
-	uint32_t agent_magic;
-	uint32_t agent_version;
-	uint8_t agent_timeout_detection;
-	uint8_t agent_tracing;
-	uint8_t agent_ijon_tracing;
-	uint8_t agent_non_reload_mode;
-	uint64_t trace_buffer_vaddr;
-	uint64_t ijon_trace_buffer_vaddr;
-	uint32_t coverage_bitmap_size;
-	uint32_t input_buffer_size;
-	uint8_t dump_payloads; /* set by hypervisor */
+	UINT32 agent_magic;
+	UINT32 agent_version;
+	UINT8 agent_timeout_detection;
+	UINT8 agent_tracing;
+	UINT8 agent_ijon_tracing;
+	UINT8 agent_non_reload_mode;
+	UINT64 trace_buffer_vaddr;
+	UINT64 ijon_trace_buffer_vaddr;
+	UINT32 coverage_bitmap_size;
+	UINT32 input_buffer_size;
+	UINT8 dump_payloads; /* set by hypervisor */
 	/* more to come */
 } __attribute__((packed)) agent_config_t;
 
 typedef struct kafl_dump_file_s {
-	uint64_t file_name_str_ptr;
-	uint64_t data_ptr;
-	uint64_t bytes;
-	uint8_t append;
+	UINT64 file_name_str_ptr;
+	UINT64 data_ptr;
+	UINT64 bytes;
+	UINT8 append;
 } __attribute__((packed)) kafl_dump_file_t;
-
-typedef struct req_data_bulk_s {
-	char file_name[256];
-	uint64_t num_addresses;
-	uint64_t addresses[479];
-} req_data_bulk_t;
 
 #endif /* NYX_API_H */
