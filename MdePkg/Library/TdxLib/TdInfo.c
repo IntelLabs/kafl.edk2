@@ -41,6 +41,7 @@ TdSharedPageMask (
   ASSERT (Status == TDX_EXIT_REASON_SUCCESS);
 
   Gpaw = (UINT8)(TdReturnData.TdInfo.Gpaw & 0x3f);
+  Gpaw = 48; // fix GPAW for SDV emulation
   mTdSharedPageMask = 1ULL << (Gpaw - 1);
   ASSERT(Gpaw == 48 || Gpaw == 52);
   return mTdSharedPageMask;
