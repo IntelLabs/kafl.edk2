@@ -66,7 +66,17 @@
 #define KAFL_MODE_32	1
 #define KAFL_MODE_16	2
 
+typedef union {
+    struct {
+        unsigned int dump_observed :1;
+        unsigned int dump_stats :1;
+        unsigned int dump_callers :1;
+    };
+    UINT32 raw_data;
+} __attribute__((packed)) agent_flags_t;
+
 typedef struct {
+	agent_flags_t flags;
 	INT32 size;
 	UINT8 data[];
 } kAFL_payload;
