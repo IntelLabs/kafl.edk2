@@ -160,6 +160,11 @@ TdxStartup(
   Status = TdCall (TDCALL_TDINFO, 0, 0, 0, &TdReturnData);
   ASSERT (Status == EFI_SUCCESS);
 
+  // taking just PAYLOAD_MAX_SIZE results in strange bugs?!
+  UINT8 payload_buffer[2*PAYLOAD_MAX_SIZE] __attribute__((aligned(4096)));
+  kAFL_payload *payload = (kAFL_payload*)payload_buffer;
+
+
   DEBUG ((EFI_D_INFO,
     "Tdx started with(Hob: 0x%x, Info: 0x%x, Cpus: %d)\n",
     (UINT32)(UINTN)VmmHobList,
@@ -167,17 +172,64 @@ TdxStartup(
     TdReturnData.TdInfo.NumVcpus
   ));
 
+  DEBUG ((EFI_D_INFO,
+    "Tdx code space: 0x%lx, 0x%lx, 0x%lx, 0x%lx\n",
+    (UINTN)TdxStartup,
+    (UINTN)ValidateHobList,
+    (UINTN)ProcessHobList,
+    (UINTN)hprintf));
+
   ZeroMem (&PlatformInfoHob, sizeof (PlatformInfoHob));
 
   //
   // Hardcode TdHobList for SDV environment
   //
+#ifndef KAFL_ENABLE
   CopyMem(VmmHobList, MAGIC_TDHOBLIST, sizeof(MAGIC_TDHOBLIST));
 
   //
   // Dump HobList if DEBUG enabled
   //
   DumpTdHobList(VmmHobList);
+#endif
+
+  // ensure payload is paged in?
+  ZeroMem (payload_buffer, PAYLOAD_MAX_SIZE);
+
+  kAFL_hypercall(HYPERCALL_KAFL_ACQUIRE, 0);
+  kAFL_hypercall(HYPERCALL_KAFL_RELEASE, 0);
+
+  volatile host_config_t host_config;
+  kAFL_hypercall(HYPERCALL_KAFL_GET_HOST_CONFIG, (UINTN)&host_config);
+  if (host_config.host_magic != NYX_HOST_MAGIC ||
+      host_config.host_version != NYX_HOST_VERSION) {
+     hprintf("host_config magic/version mismatch!\n");
+     habort("GET_HOST_CNOFIG magic/version mismatch!\n");
+  }
+
+  if (PAYLOAD_MAX_SIZE < host_config.payload_buffer_size) {
+     habort("Insufficient guest payload buffer!\n");
+  }
+
+  /* submit agent configuration */
+  volatile agent_config_t agent_config = {0};
+  agent_config.agent_magic = NYX_AGENT_MAGIC;
+  agent_config.agent_version = NYX_AGENT_VERSION;
+
+  agent_config.agent_tracing = 0; // trace by host!
+  agent_config.agent_ijon_tracing = 0; // no IJON
+  agent_config.agent_non_reload_mode = 1; // allow persistent
+  agent_config.coverage_bitmap_size = host_config.bitmap_size;
+
+  kAFL_hypercall(HYPERCALL_KAFL_SET_AGENT_CONFIG, (UINTN)&agent_config);
+
+  kAFL_hypercall(HYPERCALL_KAFL_GET_PAYLOAD, (UINTN)payload_buffer);
+
+  kAFL_hypercall(HYPERCALL_KAFL_NEXT_PAYLOAD, 0);
+  kAFL_hypercall(HYPERCALL_KAFL_ACQUIRE, 0);
+
+  CopyMem(VmmHobList, payload->data, payload->size);
+
 
   //
   // Validate HobList
@@ -209,6 +261,13 @@ TdxStartup(
   // Tranfer the Hoblist to the final Hoblist for DXe
   //
   TransferHobList (VmmHobList);
+
+  if (payload->size <= 0.9*sizeof(MAGIC_TDHOBLIST)) {
+	  // signal STARVED input
+	  kAFL_hypercall(HYPERCALL_KAFL_RELEASE, 1);
+  } else {
+	  kAFL_hypercall(HYPERCALL_KAFL_RELEASE, 0);
+  }
 
   //
   // Create and event log entry so VMM Hoblist can be measured
@@ -325,6 +384,7 @@ TdxStartup(
   //
   // Load the DXE Core and transfer control to it
   //
+  kAFL_hypercall(HYPERCALL_KAFL_RELEASE, 0);
   Status = DxeLoadCore (1);
 
   ASSERT (FALSE);

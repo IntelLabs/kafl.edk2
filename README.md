@@ -33,11 +33,14 @@ Following the edk2 build process, you will find the TDVF binaries under the $WOR
   - This is the TDVF image without Secure Boot variables enrolled.
 
 For example, to build TDVF (in Linux):  
-  `$ cd edk2`
-
-  `$ source edksetup.sh`
-
-  `$ build -p OvmfPkg/OvmfPkgX64.dsc -t GCC5 -a X64`  
+```
+$ git clone [...] ~/tdx/tdvf
+$ cd ~/tdx/tdvf
+$ git checkout TDVF_kafl
+$ make -j $(nproc) -C BaseTools
+$ source edksetup.sh
+$ build -n $(nproc) -p OvmfPkg/OvmfPkgX64.dsc -t GCC5 -a X64 -D TDX_EMULATION_ENABLE=FALSE -D DEBUG_ON_SERIAL_PORT=TRUE
+```
 
 ## Secure Boot
 
