@@ -104,7 +104,11 @@ InternalPrintMessage (
   //
   // Send the print string to a Serial Port
   //
+#ifdef KAFL_ENABLE
+  hprintf(Buffer);
+#else
   SerialPortWrite ((UINT8 *)Buffer, AsciiStrLen (Buffer));
+#endif
 }
 
 /**

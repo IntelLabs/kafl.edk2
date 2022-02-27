@@ -14,6 +14,16 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #ifndef __BASE_LIB__
 #define __BASE_LIB__
 
+/*
+ * Global enable/disable for KAFL agent
+ * Apparently we're supposed to define a Pcd option via various files..
+ */
+#if   defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+#define KAFL_ENABLE
+#include <Library/NyxHypercalls.h>
+#endif
+
+
 //
 // Definitions for architecture-specific types
 //

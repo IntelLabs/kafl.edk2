@@ -140,6 +140,11 @@ CommonExceptionHandlerWorker (
     // Display ExceptionType, CPU information and Image information
     //
     DumpImageAndCpuContent (ExceptionType, SystemContext);
+
+#ifdef KAFL_ENABLE
+    kAFL_hypercall(HYPERCALL_KAFL_PANIC, 0);
+#endif
+
     //
     // Release Spinlock of output message
     //

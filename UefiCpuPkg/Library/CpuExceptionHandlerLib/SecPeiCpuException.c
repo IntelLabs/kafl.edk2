@@ -71,6 +71,10 @@ CommonExceptionHandler (
   //
   DumpImageAndCpuContent (ExceptionType, SystemContext);
 
+#ifdef KAFL_ENABLE
+  kAFL_hypercall(HYPERCALL_KAFL_KASAN, 0);
+#endif
+
   //
   // Enter a dead loop.
   //
