@@ -895,6 +895,8 @@ Process2ndPassCmdAddPointer (
   PointerValue = 0;
   CopyMem (&PointerValue, PointerField, AddPointer->PointerSize);
 
+  Header = NULL;
+
   //
   // We assert that PointerValue falls inside Blob2's contents. This is ensured
   // by the Blob2->Size check and later checks in ProcessCmdAddPointer().
@@ -1003,6 +1005,11 @@ Process2ndPassCmdAddPointer (
     //
     // Measure the installed ACPI table downloaded from QEMU
     //
+    if (Header == NULL) {
+      ASSERT (FALSE);
+      Status = EFI_INVALID_PARAMETER;
+      goto RollbackSeenPointer;
+    }
     Status = MeasureQemuFwCfgAcpi ((CHAR8 *)&Header->Signature,
                                   sizeof (Header->Signature),
                                   PointerValue,
