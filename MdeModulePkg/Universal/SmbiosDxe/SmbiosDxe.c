@@ -8,7 +8,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include "SmbiosDxe.h"
-#include <Library/TdxProbeLib.h>
+
 //
 // Module Global:
 // Since this driver will only ever produce one instance of the
@@ -1427,10 +1427,6 @@ SmbiosDriverEntryPoint (
   )
 {
   EFI_STATUS            Status;
-
-  if(TdxIsEnabled()) {
-    return EFI_UNSUPPORTED;
-  }
 
   mPrivateData.Signature                = SMBIOS_INSTANCE_SIGNATURE;
   mPrivateData.Smbios.Add               = SmbiosAdd;

@@ -15,7 +15,6 @@
   FILE_GUID                      = F9D88642-0737-49bc-81B5-6889CD57D9EA
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-
   ENTRY_POINT                    = SmbiosDriverEntryPoint
 
 #
@@ -41,7 +40,6 @@
   UefiDriverEntryPoint
   DebugLib
   PcdLib
-  TdxProbeLib
 
 [Protocols]
   gEfiSmbiosProtocolGuid                            ## PRODUCES
