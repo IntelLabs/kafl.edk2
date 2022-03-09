@@ -354,19 +354,25 @@ IsConfigValid (
 
   SystemMemoryEnd = PcdGet64 (PcdTdxSystemMemoryEnd);
 
+  if (VirtIoConfig == NULL || Device == NULL) {
+    ASSERT (FALSE);
+    return FALSE;
+  }
+
   BarIndex = VirtIoConfig->Bar;
   Offset = VirtIoConfig->Offset;
   Length = VirtIoConfig->Length;
+
+  if (BarIndex >= PCI_MAX_BAR) {
+    return FALSE;
+  }
+
   BarLength = mPciBars[BarIndex].EndAddress - mPciBars[BarIndex].BaseAddress + 1;
   BaseAddress = mPciBars[BarIndex].BaseAddress + Offset;
   EndAddress = BaseAddress + Length - 1;
 
   DEBUG ((DEBUG_INFO, "Check VirtIoPciConfig: %d %llx %llx %d\n",
     BarIndex, BaseAddress, EndAddress, ConfigType));
-
-  if (BarIndex >= PCI_MAX_BAR) {
-    return FALSE;
-  }
 
   if (!mPciBars[BarIndex].Valid) {
     DEBUG ((DEBUG_ERROR, "--Bar %d is invalid.\n", BarIndex));
@@ -429,7 +435,10 @@ IsConfigValid (
 
   // It is a valid cap, so insert it into mPciCapMap
   Entry = AllocateCopyPool (sizeof (PCI_CAP_MAP_ENTRY), &mPciCapMapEntryTemplate);
-  ASSERT (Entry != NULL);
+  if (Entry == NULL) {
+    ASSERT (FALSE);
+    return FALSE;
+  }
 
   Entry->BarIndex = BarIndex;
   Entry->BaseAddress = BaseAddress;
