@@ -993,6 +993,7 @@ Process2ndPassCmdAddPointer (
     goto RollbackSeenPointer;
   }
 
+  Header = (EFI_ACPI_DESCRIPTION_HEADER *)(UINTN)PointerValue;
   Status = AcpiProtocol->InstallAcpiTable (AcpiProtocol,
                          (VOID *)(UINTN)PointerValue, TableSize,
                          &InstalledKey[*NumInstalled]);
