@@ -84,7 +84,6 @@ TdxStartup(
   UINT32                      DxeCodeBase;
   UINT32                      DxeCodeSize;
   TD_RETURN_DATA              TdReturnData;
-  UINT8                       *PlatformInfoPtr;
   BOOLEAN                     CfgSysStateDefault;
   BOOLEAN                     CfgNxStackDefault;
 
@@ -145,11 +144,11 @@ TdxStartup(
   //
   TdvfPlatformInitialize (&PlatformInfoHob, &CfgSysStateDefault, &CfgNxStackDefault);
 
-  if (!CfgSysStateDefault) {
-    TdxMeasureQemuCfg (1, FW_CFG_NX_STACK_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 6, 6);
-  }
   if (!CfgNxStackDefault) {
-    TdxMeasureQemuCfg (1, FW_CFG_SYSTEM_STATE_ITEM, PlatformInfoPtr + sizeof(EFI_HOB_PLATFORM_INFO) - 7, sizeof (BOOLEAN));
+    TdxMeasureQemuCfg (1, FW_CFG_NX_STACK_ITEM, &(PlatformInfoHob.SetNxForStack), sizeof (BOOLEAN));
+  }
+  if (!CfgSysStateDefault) {
+    TdxMeasureQemuCfg (1, FW_CFG_SYSTEM_STATE_ITEM, &(PlatformInfoHob.SystemStates[0]), 6);
   }
 
   //
@@ -225,7 +224,7 @@ TdxStartup(
 
   MeasureConfigurationVolume ((UINT64)(UINTN)PcdGet32 (PcdCfvBase));
 
-  PlatformInfoPtr = (UINT8*)BuildGuidDataHob (&gUefiOvmfPkgTdxPlatformGuid, &PlatformInfoHob, sizeof (EFI_HOB_PLATFORM_INFO));
+  BuildGuidDataHob (&gUefiOvmfPkgTdxPlatformGuid, &PlatformInfoHob, sizeof (EFI_HOB_PLATFORM_INFO));
 
   BuildStackHob ((UINTN)SecCoreData->StackBase, SecCoreData->StackSize <<=1 );
 
