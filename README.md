@@ -6,6 +6,6 @@ WARNING - this project contains experimental and unsupported software for purpos
 Overview:
 
 * `TDVF` tracks upstream development at https://github.com/tianocore/edk2-staging/tree/TDVF
-* `TDVF\_SDV` contains a modified TDVF for booting in SDV emulation
+* `TDVF_SDV` contains a modified TDVF for booting in SDV emulation
 
 See also: https://github.com/IntelLabs/kAFL
