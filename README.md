@@ -1,4 +1,4 @@
-# Misc EDK2 branches for kAFL
+# UEFI EDK2 branches for fuzzing with kAFL
 
 Overview:
 
