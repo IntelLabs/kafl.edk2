@@ -5,7 +5,7 @@ WARNING - this project contains experimental and unsupported software for purpos
 Branches Overview:
 
 * `master` tracks upstream edk2 master at https://github.com/tianocore/edk2
-* `kafl/*` contain feature branches for kAFL
+* `kafl/*` contain feature branches of edk2 for kAFL
 * `TDVF` tracks upstream development at https://github.com/tianocore/edk2-staging/tree/TDVF
 * `TDVF_SDV` contains a modified TDVF for booting in SDV emulation
 * `TDVF_fuzz_hello` adds a basic kAFL harness on top of TDVF_SDV branch to fuzz TDX HobList
