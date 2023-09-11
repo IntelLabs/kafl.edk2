@@ -14,3 +14,4 @@ See also:
 * [kAFL Project](https://github.com/IntelLabs/kAFL)
 * [Fuzzing UEFI with kAFL](https://github.com/IntelLabs/kafl.targets/tree/master/uefi_ovmf_64)
 
+<!-- reviewed, 9/11/2023 michaelbeale-il -->
